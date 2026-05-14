@@ -30,7 +30,7 @@ const qtTitleOverrides = {
   '2026-06-30': '심은 대로 거두는 징계의 심판'
 };
 
-if (window.churchData?.qt?.items) {
+if (typeof churchData !== 'undefined' && churchData.qt && Array.isArray(churchData.qt.items)) {
   churchData.qt.items.forEach(item => {
     if (qtTitleOverrides[item.date]) item.title = qtTitleOverrides[item.date];
   });
