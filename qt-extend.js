@@ -111,5 +111,5 @@ qtExtensionItems.forEach(item => {
 });
 churchData.qt.items.sort((a, b) => a.date.localeCompare(b.date));
 churchData.qt.subtitle = '5–9월 큐티 일정';
-churchData.qt.description = '노션 원자료를 기준으로 월별로 나누어 보는 큐티 본문';
-churchData.qt.theme = '📖 <strong>생명의삶 본문(2026년 9월까지)</strong><br>5월부터 9월까지 월별 큐티 본문을 나누어 봅니다.';
+churchData.qt.description = '';
+churchData.qt.theme = '';
