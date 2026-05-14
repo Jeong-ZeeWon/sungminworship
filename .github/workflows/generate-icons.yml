@@ -1,0 +1,98 @@
+name: Generate app icons
+
+on:
+  push:
+    paths:
+      - '.github/workflows/generate-icons.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  generate-icons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate PNG icons
+        run: |
+          python3 <<'PY'
+          import struct, zlib, math
+          from pathlib import Path
+
+          def png_chunk(tag, data):
+              return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', zlib.crc32(tag + data) & 0xffffffff)
+
+          def make_icon(size, path):
+              bg1 = (255, 248, 238)
+              bg2 = (52, 120, 80)
+              cream = (255, 253, 247)
+              brown = (122, 63, 29)
+              warm = (184, 101, 42)
+              pixels = []
+
+              def rounded_rect(x, y, r):
+                  rad = int(size * 0.22)
+                  if x < rad and y < rad:
+                      return (x-rad)**2 + (y-rad)**2 <= rad**2
+                  if x >= size-rad and y < rad:
+                      return (x-(size-rad-1))**2 + (y-rad)**2 <= rad**2
+                  if x < rad and y >= size-rad:
+                      return (x-rad)**2 + (y-(size-rad-1))**2 <= rad**2
+                  if x >= size-rad and y >= size-rad:
+                      return (x-(size-rad-1))**2 + (y-(size-rad-1))**2 <= rad**2
+                  return True
+
+              for y in range(size):
+                  row = bytearray([0])
+                  for x in range(size):
+                      if not rounded_rect(x, y, 0):
+                          color = bg1
+                      else:
+                          t = (x + y) / (2 * (size - 1))
+                          color = tuple(int(bg1[i]*(1-t) + bg2[i]*t) for i in range(3))
+
+                      cx = cy = size / 2
+                      dist = math.hypot(x - cx, y - cy)
+                      if dist < size * 0.36:
+                          color = cream
+
+                      # cross vertical
+                      if abs(x - cx) < size * 0.055 and size*0.22 < y < size*0.62:
+                          color = brown
+                      # cross horizontal
+                      if size*0.32 < x < size*0.68 and abs(y - size*0.35) < size*0.055:
+                          color = brown
+                      # simple church base
+                      if size*0.28 < x < size*0.72 and size*0.66 < y < size*0.75:
+                          color = brown
+                      # roof arc approximation
+                      roof_y = size*0.70 - 0.45*abs(x - cx)
+                      if size*0.25 < x < size*0.75 and abs(y - roof_y) < size*0.035:
+                          color = warm
+
+                      row.extend(color)
+                  pixels.append(bytes(row))
+
+              raw = b''.join(pixels)
+              png = b'\x89PNG\r\n\x1a\n'
+              png += png_chunk(b'IHDR', struct.pack('>IIBBBBB', size, size, 8, 2, 0, 0, 0))
+              png += png_chunk(b'IDAT', zlib.compress(raw, 9))
+              png += png_chunk(b'IEND', b'')
+              Path(path).write_bytes(png)
+
+          make_icon(180, 'icon-180.png')
+          make_icon(192, 'icon-192.png')
+          make_icon(512, 'icon-512.png')
+          Path('apple-touch-icon.png').write_bytes(Path('icon-180.png').read_bytes())
+          PY
+
+      - name: Commit icons
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add icon-180.png icon-192.png icon-512.png apple-touch-icon.png
+          git diff --staged --quiet || git commit -m "fix: generate valid app icons"
+          git push
