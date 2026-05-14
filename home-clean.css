@@ -18,3 +18,7 @@ body.not-home .app-header {
 body.not-home .screen-wrap {
   top: 60px;
 }
+
+.footer-note {
+  display: none;
+}
