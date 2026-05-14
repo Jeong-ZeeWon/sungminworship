@@ -1,4 +1,20 @@
-.app-header.home-hidden{display:none}
-.screen-wrap.home-full{top:0}
-.app-header .header-copy{display:none}
-.app-header{justify-content:flex-start}
+.app-header {
+  display: none;
+  justify-content: flex-start;
+}
+
+body.not-home .app-header {
+  display: flex;
+}
+
+.app-header .header-copy {
+  display: none;
+}
+
+.screen-wrap {
+  top: 0;
+}
+
+body.not-home .screen-wrap {
+  top: 60px;
+}
