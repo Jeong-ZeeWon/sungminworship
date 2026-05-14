@@ -1,7 +1,6 @@
 function syncHomeHeader(){
   const isHome = document.getElementById('home')?.classList.contains('active');
-  document.querySelector('.app-header')?.classList.toggle('home-hidden', !!isHome);
-  document.querySelector('.screen-wrap')?.classList.toggle('home-full', !!isHome);
+  document.body.classList.toggle('not-home', !isHome);
 }
 
 const homeHeaderObserver = new MutationObserver(syncHomeHeader);
