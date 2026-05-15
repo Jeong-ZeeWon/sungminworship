@@ -1,0 +1,101 @@
+.sunday-staff-sec {
+  padding: 16px 15px 18px;
+}
+
+.sun-staff-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.sun-staff-card {
+  background: linear-gradient(135deg, #fffaf0, #ffffff);
+  border: 1.5px solid var(--sun-light);
+  border-radius: 16px;
+  padding: 13px 14px;
+  box-shadow: 0 4px 14px rgba(196, 132, 28, .08);
+}
+
+.sun-staff-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--sun-bg);
+  color: var(--sun);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sun-staff-title::before {
+  content: '☀️';
+  font-size: 12px;
+}
+
+.sun-staff-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.sun-staff-row:last-child {
+  border-bottom: 0;
+}
+
+.sun-role {
+  font-size: 11px;
+  color: var(--soft);
+  font-weight: 800;
+  min-width: 42px;
+}
+
+.sun-name {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 900;
+  text-align: right;
+}
+
+.sun-empty {
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--soft);
+}
+
+.sun-staff-etc {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+@media (min-width: 430px) {
+  .sun-staff-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .sun-staff-card {
+    padding: 12px 11px;
+  }
+
+  .sun-staff-row {
+    display: block;
+    padding: 7px 0;
+  }
+
+  .sun-role,
+  .sun-name {
+    display: block;
+    text-align: left;
+  }
+
+  .sun-name {
+    margin-top: 2px;
+  }
+}
