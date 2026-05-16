@@ -1,0 +1,36 @@
+name: Update weekly worship leaders
+
+on:
+  schedule:
+    # Every Saturday 09:30 KST = Saturday 00:30 UTC
+    - cron: '30 0 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update leaders from Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PAGE_ID: 35b5e604d8c680aea0c4d47fc08c83f7
+        run: node scripts/update-weekly-leaders.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add leaders-update.js
+          git diff --staged --quiet || git commit -m "chore: update weekly worship leaders"
+          git push
