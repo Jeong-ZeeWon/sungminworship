@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>성민교회</title>
   <meta name="description" content="성민교회 예배 일정과 큐티 본문, 한 주간 예배 담당자 앱" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="성민교회" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -15,9 +18,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@600;700;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20260516-leaders-update" />
-  <link rel="stylesheet" href="./home-clean.css?v=20260516-leaders-update" />
-  <link rel="stylesheet" href="./sunday-staff-groups.css?v=20260516-leaders-update" />
+  <link rel="stylesheet" href="./styles.css?v=20260516-auto-refresh" />
+  <link rel="stylesheet" href="./home-clean.css?v=20260516-auto-refresh" />
+  <link rel="stylesheet" href="./sunday-staff-groups.css?v=20260516-auto-refresh" />
 </head>
 <body>
   <div id="app">
@@ -36,12 +39,14 @@
     </main>
   </div>
 
-  <script src="./data.js?v=20260516-leaders-update"></script>
-  <script src="./leaders-update.js?v=20260516-leaders-update"></script>
-  <script src="./qt-extend.js?v=20260516-leaders-update"></script>
-  <script src="./qt-titles.js?v=20260516-leaders-update"></script>
-  <script src="./app.js?v=20260516-leaders-update"></script>
-  <script src="./sunday-staff-groups.js?v=20260516-leaders-update"></script>
-  <script src="./home-clean.js?v=20260516-leaders-update"></script>
+  <script src="./data.js?v=20260516-auto-refresh"></script>
+  <script>
+    document.write('<script src="./leaders-update.js?v=' + Date.now() + '"><\\/script>');
+  </script>
+  <script src="./qt-extend.js?v=20260516-auto-refresh"></script>
+  <script src="./qt-titles.js?v=20260516-auto-refresh"></script>
+  <script src="./app.js?v=20260516-auto-refresh"></script>
+  <script src="./sunday-staff-groups.js?v=20260516-auto-refresh"></script>
+  <script src="./home-clean.js?v=20260516-auto-refresh"></script>
 </body>
 </html>
