@@ -93,12 +93,15 @@ function expandDays(spec) {
 
 function distribute(value) {
   const arr = Array(6).fill('');
-  for (const part of String(value || '').split(/,\s*/)) {
-    const m = part.trim().match(/^(.+?)\(([^)]+)\)$/);
-    if (!m) continue;
-    const name = normalizeName(m[1]);
-    expandDays(m[2]).forEach(i => { arr[i] = name; });
+  const text = String(value || '');
+  const matches = text.matchAll(/([^(),]+?)\s*\(([^)]*)\)/g);
+
+  for (const match of matches) {
+    const name = normalizeName(match[1]);
+    const days = expandDays(match[2]);
+    days.forEach(i => { arr[i] = name; });
   }
+
   return arr;
 }
 
