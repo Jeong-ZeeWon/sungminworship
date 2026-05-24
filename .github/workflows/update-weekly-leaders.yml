@@ -5,6 +5,9 @@ on:
     # Every Saturday 09:30 KST = Saturday 00:30 UTC
     - cron: '30 0 * * 6'
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/update-weekly-leaders.yml'
 
 permissions:
   contents: write
@@ -19,6 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Setup Node
@@ -39,5 +43,4 @@ jobs:
           git add leaders-update.js
           git diff --staged --quiet && exit 0
           git commit -m "chore: update weekly worship leaders"
-          git pull --rebase origin main
           git push
