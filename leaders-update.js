@@ -8,7 +8,7 @@ if (typeof churchData !== 'undefined') {
   "icon": "👥",
   "color": "ldr",
   "description": "이번 주 새벽·수요·금요 예배 담당자",
-  "week": "5/18 — 5/23",
+  "week": "5/25 — 5/30",
   "dawn": {
     "days": [
       "월",
@@ -19,20 +19,20 @@ if (typeof churchData !== 'undefined') {
       "토"
     ],
     "preacher": [
-      "최명환",
-      "최명환",
+      "노태규",
+      "노태규",
       "목사님",
       "목사님",
-      "정지원",
-      "정지원"
+      "박정인",
+      "박정인"
     ],
     "caption": [
       "윤수신",
       "윤수신",
       "윤수신",
-      "박정인",
-      "박정인",
-      "박정인"
+      "정지원",
+      "정지원",
+      "정지원"
     ],
     "accomp": [
       "김진희",
@@ -44,21 +44,21 @@ if (typeof churchData !== 'undefined') {
     ]
   },
   "wednesday": {
-    "date": "5/20(수)",
+    "date": "5/27(수)",
     "preacher": "윤수신",
-    "worship": "정지원",
-    "sound": "노태규",
-    "pd": "최명환"
+    "worship": "노태규",
+    "sound": "정지원",
+    "pd": "박정인"
   },
   "friday": {
-    "date": "5/22(금)",
+    "date": "5/29(금)",
     "worship": "정지원",
-    "pd": "노태규",
-    "caption": "윤수신",
+    "pd": "윤수신",
+    "caption": "박정인",
     "prayer": [
-      "최명환",
-      "노태규",
-      "윤수신"
+      "박정인",
+      "윤수신",
+      "김은형"
     ]
   }
 };
