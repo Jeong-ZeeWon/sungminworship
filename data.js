@@ -125,14 +125,14 @@ const churchData = {
     icon: '👥',
     color: 'ldr',
     description: '이번 주 새벽·수요·금요 예배 담당자',
-    week: '5/11 — 5/16',
+    week: '6/1 — 6/6',
     dawn: {
       days: ['월','화','수','목','금','토'],
-      preacher: ['윤수신','윤수신','목사님','목사님','박정인','박정인'],
-      caption: ['최명환','최명환','최명환','노태규','노태규','노태규'],
-      accomp: ['김진희','최우진','사모님','김진희','사모님','최우진']
+      preacher: ['초하루','최명환','최명환','최명환','정지원','정지원'],
+      caption: ['초하루','노태규','노태규','윤수신','윤수신','윤수신'],
+      accomp: ['초하루','최우진','사모님','김진희','사모님','최우진']
     },
-    wednesday: { date:'5/13(수)', preacher:'노태규', worship:'최명환', sound:'윤수신', pd:'박정인' },
-    friday: { date:'5/15(금)', preacher:'이은호 목사', worship:'윤수신', pd:'정지원', caption:'박정인', prayer:['박정인','정지원','김은형'] }
+    wednesday: { date:'6/3(수)', preacher:'노태규', worship:'윤수신', sound:'최명환', pd:'정지원' },
+    friday: { date:'6/5(금)', worship:'윤수신', pd:'박정인', caption:'정지원', prayer:['민꿈 교역자'] }
   }
 };
