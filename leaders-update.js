@@ -8,7 +8,7 @@ if (typeof churchData !== 'undefined') {
   "icon": "👥",
   "color": "ldr",
   "description": "이번 주 새벽·수요·금요 예배 담당자",
-  "week": "5/25 — 5/30",
+  "week": "6/1 — 6/6",
   "dawn": {
     "days": [
       "월",
@@ -19,23 +19,23 @@ if (typeof churchData !== 'undefined') {
       "토"
     ],
     "preacher": [
-      "노태규",
-      "노태규",
-      "목사님",
-      "목사님",
-      "박정인",
-      "박정인"
-    ],
-    "caption": [
-      "윤수신",
-      "윤수신",
-      "윤수신",
-      "정지원",
+      "초하루",
+      "최명환",
+      "최명환",
+      "최명환",
       "정지원",
       "정지원"
     ],
+    "caption": [
+      "초하루",
+      "노태규",
+      "노태규",
+      "윤수신",
+      "윤수신",
+      "윤수신"
+    ],
     "accomp": [
-      "김진희",
+      "초하루",
       "최우진",
       "사모님",
       "김진희",
@@ -44,21 +44,19 @@ if (typeof churchData !== 'undefined') {
     ]
   },
   "wednesday": {
-    "date": "5/27(수)",
-    "preacher": "윤수신",
-    "worship": "노태규",
-    "sound": "정지원",
-    "pd": "박정인"
+    "date": "6/3(수)",
+    "preacher": "노태규",
+    "worship": "윤수신",
+    "sound": "최명환",
+    "pd": "정지원"
   },
   "friday": {
-    "date": "5/29(금)",
-    "worship": "정지원",
-    "pd": "윤수신",
-    "caption": "박정인",
+    "date": "6/5(금)",
+    "worship": "윤수신",
+    "pd": "박정인",
+    "caption": "정지원",
     "prayer": [
-      "박정인",
-      "윤수신",
-      "김은형"
+      "민꿈 교역자"
     ]
   }
 };
