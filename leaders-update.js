@@ -56,7 +56,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "박정인",
     "caption": "정지원",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   }
 };
