@@ -1,6 +1,7 @@
 function syncHomeHeader(){
   const isHome = document.getElementById('home')?.classList.contains('active');
   document.body.classList.toggle('not-home', !isHome);
+  document.querySelector('[data-section="qt"] .m-badge')?.replaceChildren('6–9월');
 }
 
 const homeHeaderObserver = new MutationObserver(syncHomeHeader);
