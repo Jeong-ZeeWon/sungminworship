@@ -46,7 +46,7 @@ function section(lines, word) {
   if (start < 0) throw new Error(`${word} section not found.`);
   const out = [];
   for (let i = start; i < lines.length; i++) {
-    if (i > start && /담당/.test(lines[i]) && /(새벽기도회|수요예배|금요성령집회)/.test(lines[i])) break;
+    if (i > start && /담당/.test(lines[i]) && /(새벽기도회|수요예배|금요성령집회|주일예배|열방예배)/.test(lines[i])) break;
     out.push(lines[i]);
   }
   return out;
@@ -109,17 +109,27 @@ function prayer(value) {
   return String(value || '').split(/[ ,，]+/).map(normalizeName).filter(Boolean);
 }
 
+function worshipSection(lines, keys) {
+  const out = { date: dateLabel(lines[0]) };
+  for (const key of keys) {
+    out[key.prop] = normalizeName(after(lines, key.label));
+  }
+  return out;
+}
+
 const lines = await getLines();
 const dawn = section(lines, '새벽기도회');
 const wed = section(lines, '수요예배');
 const fri = section(lines, '금요성령집회');
+const sun = section(lines, '주일예배');
+const nations = section(lines, '열방예배');
 
 const leaders = {
   title: '한 주간 예배 담당자',
   subtitle: '이번 주 예배 담당자',
   icon: '👥',
   color: 'ldr',
-  description: '이번 주 새벽·수요·금요 예배 담당자',
+  description: '이번 주 새벽·수요·금요·주일·열방 예배 담당자',
   week: weekLabel(dawn[0]),
   dawn: {
     days: dayNames,
@@ -140,7 +150,23 @@ const leaders = {
     pd: normalizeName(after(fri, 'PD')),
     caption: normalizeName(after(fri, '자막')),
     prayer: prayer(after(fri, '기도용사'))
-  }
+  },
+  sunday: worshipSection(sun, [
+    { label: '1부 사회', prop: 'firstHost' },
+    { label: '2부 사회', prop: 'secondHost' },
+    { label: '3부 사회', prop: 'thirdHost' },
+    { label: '1부 PD', prop: 'firstPd' },
+    { label: '1부 자막', prop: 'firstCaption' },
+    { label: '2부 PD', prop: 'secondPd' }
+  ]),
+  nations: worshipSection(nations, [
+    { label: '사회', prop: 'host' },
+    { label: '찬양', prop: 'worship' },
+    { label: '영상/송출', prop: 'video' },
+    { label: '자막', prop: 'caption' },
+    { label: '특순', prop: 'special' },
+    { label: '대표기도', prop: 'prayer' }
+  ])
 };
 
 const output = `// 노션 원자료 기준: 한 주간 예배 담당자\n// GitHub Actions가 매주 토요일 09:30(KST)에 자동 갱신합니다.\n\nif (typeof churchData !== 'undefined') {\n  churchData.leaders = ${JSON.stringify(leaders, null, 2)};\n}\n`;
