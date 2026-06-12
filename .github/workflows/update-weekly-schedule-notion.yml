@@ -1,0 +1,42 @@
+name: Update weekly schedule on Notion
+
+on:
+  schedule:
+    # 매주 금요일 23:00 KST = 금요일 14:00 UTC
+    - cron: '0 14 * * 5'
+  workflow_dispatch:
+    inputs:
+      override_dow:
+        description: '요일 검증 우회(테스트용)'
+        required: false
+        default: 'false'
+  push:
+    paths:
+      - '.github/workflows/update-weekly-schedule-notion.yml'
+      - 'scripts/update-weekly-schedule-notion.mjs'
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Update Notion 한 주간 예배 담당자 page
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          OVERRIDE_DOW: ${{ inputs.override_dow == 'true' && '1' || '' }}
+        run: node scripts/update-weekly-schedule-notion.mjs
