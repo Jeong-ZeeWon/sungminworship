@@ -22,7 +22,7 @@ async function notion(path) {
 function textOf(block) {
   const body = block[block.type];
   if (!body?.rich_text) return '';
-  return body.rich_text.map(t => t.plain_text || '').join('').trim();
+  return body.rich_text.map(t => t.plain_text || '').join('');
 }
 
 async function getLines() {
@@ -33,8 +33,13 @@ async function getLines() {
     if (cursor) qs.set('start_cursor', cursor);
     const data = await notion(`/blocks/${pageId}/children?${qs}`);
     for (const block of data.results) {
-      const line = textOf(block).replace(/^\*+|\*+$/g, '').trim();
-      if (line && line !== '---') lines.push(line);
+      const raw = textOf(block);
+      // 한 블럭 안의 줄바꿈(\n) 또는 <br> 태그를 모두 라인 단위로 분리
+      const parts = raw.split(/\r?\n|<br\s*\/?>/i);
+      for (const part of parts) {
+        const line = part.replace(/^\*+|\*+$/g, '').trim();
+        if (line && line !== '---') lines.push(line);
+      }
     }
     cursor = data.has_more ? data.next_cursor : '';
   } while (cursor);
