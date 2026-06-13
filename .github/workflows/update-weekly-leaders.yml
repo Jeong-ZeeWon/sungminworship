@@ -8,6 +8,7 @@ on:
   push:
     paths:
       - '.github/workflows/update-weekly-leaders.yml'
+      - 'scripts/update-weekly-leaders.mjs'
 
 permissions:
   contents: write
