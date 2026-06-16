@@ -72,10 +72,10 @@ if (typeof churchData !== 'undefined') {
   },
   "nations": {
     "date": "6/21(일)",
-    "host": "박정인",
+    "host": "최명환",
     "worship": "정지원",
     "video": "노태규",
-    "caption": "최명환",
+    "caption": "박정인",
     "special": "1교구",
     "prayer": "권혜정권사"
   }
