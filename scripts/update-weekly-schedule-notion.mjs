@@ -1,5 +1,5 @@
 // 노션 「한 주간 예배 담당자」 페이지 자동 갱신
-// 매주 금요일 23:00 KST에 GitHub Actions가 실행
+// 매주 금요일 23:17/23:47 KST에 GitHub Actions가 실행
 // 5개 소스 페이지를 읽어 다음 주(월~토) + 다음 주 일요일 데이터를 추출해 타겟 페이지를 교체
 
 import process from 'node:process';
@@ -77,18 +77,19 @@ function md(d) { return `${d.getMonth() + 1}/${d.getDate()}`; }
 
 const today = todayKST();
 const allowOverride = process.env.OVERRIDE_DOW === '1';
-if (today.getDay() !== 5 && !allowOverride) {
-  console.log(`Today is ${today.toDateString()} (DOW=${today.getDay()}). Not Friday. Skipping.`);
+if (![5, 6].includes(today.getDay()) && !allowOverride) {
+  console.log(`Today is ${today.toDateString()} (DOW=${today.getDay()}). Not Friday/Saturday. Skipping.`);
   process.exit(0);
 }
 
-const monD = addDays(today, 3);
-const tueD = addDays(today, 4);
-const wedD = addDays(today, 5);
-const thuD = addDays(today, 6);
-const friD = addDays(today, 7);
-const satD = addDays(today, 8);
-const sunD = addDays(today, 9);
+const daysUntilMonday = (8 - today.getDay()) % 7 || 7;
+const monD = addDays(today, daysUntilMonday);
+const tueD = addDays(monD, 1);
+const wedD = addDays(monD, 2);
+const thuD = addDays(monD, 3);
+const friD = addDays(monD, 4);
+const satD = addDays(monD, 5);
+const sunD = addDays(monD, 6);
 
 const monStr = md(monD), tueStr = md(tueD), wedStr = md(wedD), thuStr = md(thuD), friStr = md(friD), satStr = md(satD), sunStr = md(sunD);
 
