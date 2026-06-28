@@ -133,21 +133,7 @@ function sectionToSummaryCard(section, index) {
 }
 
 function dailySummaryChildren(sections) {
-  return [
-    {
-      object: 'block',
-      type: 'column_list',
-      column_list: {
-        children: sections.map((section, index) => ({
-          object: 'block',
-          type: 'column',
-          column: {
-            children: [sectionToSummaryCard(section, index)],
-          },
-        })),
-      },
-    },
-  ];
+  return sections.map((section, index) => sectionToSummaryCard(section, index));
 }
 
 async function deleteChildren(blockId) {
