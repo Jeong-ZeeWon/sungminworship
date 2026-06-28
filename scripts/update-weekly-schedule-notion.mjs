@@ -8,21 +8,15 @@ const token = process.env.NOTION_TOKEN;
 if (!token) throw new Error('NOTION_TOKEN missing');
 
 const TARGET_PAGE = '35b5e604d8c680aea0c4d47fc08c83f7';
-const DAILY_PAGE = process.env.DAILY_PAGE_ID || '2df5e604d8c68153b64dc76accb69102';
-const DAILY_SUMMARY_TITLE = '이번 주 예배 담당자';
 const SOURCES = {
   dawn:    '2df5e604d8c68142b803c8ada553a6ae',
   wed:     '2e15e604d8c6802f8284dd7ccc553b4f',
   fri:     '2e35e604d8c681df8d57cdbab62ed6ec',
   sun:     '2df5e604d8c6816481c6f31a7070a2d4',
   nations: '2e75e604d8c68020923dd6eeedbdcbcb',
-  firstDay:'2e15e604d8c6806da72cd26a89b1af91',
 };
 
 const DAYS = ['월','화','수','목','금','토'];
-const WEEKDAYS = ['일','월','화','수','목','금','토'];
-const summaryColors = ['blue_background', 'blue_background', 'green_background', 'purple_background', 'yellow_background', 'pink_background'];
-const summaryIcons = ['🌅', '🌅', '💧', '🔥', '⛪', '🌏'];
 
 async function notion(path, options = {}) {
   const res = await fetch(`https://api.notion.com/v1${path}`, {
@@ -88,145 +82,14 @@ if (![5, 6].includes(today.getDay()) && !allowOverride) {
   process.exit(0);
 }
 
-function blockText(block) {
-  const body = block[block.type];
-  if (!body?.rich_text) return '';
-  return body.rich_text.map(t => t.plain_text || '').join('').trim();
-}
-
-function rich(content, options = {}) {
-  return {
-    type: 'text',
-    text: { content },
-    annotations: {
-      bold: Boolean(options.bold),
-      italic: false,
-      strikethrough: false,
-      underline: false,
-      code: false,
-      color: options.color || 'default',
-    },
-  };
-}
-
-function paragraph(content, options = {}) {
-  return {
-    object: 'block',
-    type: 'paragraph',
-    paragraph: { rich_text: [rich(content, options)] },
-  };
-}
-
-function sectionToSummaryCard(section, index) {
-  const [title, ...details] = section.split('\n').map(line => line.trim()).filter(Boolean);
-  const detailText = details.length ? `\n${details.join('\n')}` : '';
-  const displayTitle = title.replace(/\s*담당$/, '');
-  return {
-    object: 'block',
-    type: 'callout',
-    callout: {
-      icon: { type: 'emoji', emoji: summaryIcons[index] || '🗓️' },
-      color: summaryColors[index] || 'gray_background',
-      rich_text: [
-        rich(displayTitle, { bold: true }),
-        rich(detailText),
-      ],
-    },
-  };
-}
-
-function dailySummaryChildren(sections) {
-  const groups = [
-    sections.slice(0, 2),
-    sections.slice(2, 4),
-    sections.slice(4, 6),
-  ].filter(group => group.length > 0);
-  let index = 0;
-  return [{
-    object: 'block',
-    type: 'column_list',
-    column_list: {
-      children: groups.map(group => ({
-        object: 'block',
-        type: 'column',
-        column: {
-          children: group.map(section => sectionToSummaryCard(section, index++)),
-        },
-      })),
-    },
-  }];
-}
-
-async function deleteChildren(blockId) {
-  const children = await getAllChildren(blockId);
-  for (const child of children) {
-    await notion(`/blocks/${child.id}`, { method: 'DELETE' });
-  }
-}
-
-async function findDailySummaryBlock() {
-  const children = await getAllChildren(DAILY_PAGE);
-  return children.find(block => block.type === 'callout' && blockText(block) === DAILY_SUMMARY_TITLE);
-}
-
-async function deleteDailySummarySiblings(summaryId) {
-  const children = await getAllChildren(DAILY_PAGE);
-  const index = children.findIndex(block => block.id === summaryId);
-  if (index < 0) return;
-
-  const next = children[index + 1];
-  if (next?.type === 'column_list') {
-    await notion(`/blocks/${next.id}`, { method: 'DELETE' });
-  }
-}
-
-async function createDailySummaryBlock(sections) {
-  const top = await getAllChildren(DAILY_PAGE);
-  const body = {
-    children: [
-      {
-        object: 'block',
-        type: 'callout',
-        callout: {
-          icon: { type: 'emoji', emoji: '🗓️' },
-          color: 'gray_background',
-          rich_text: [rich(DAILY_SUMMARY_TITLE, { bold: true })],
-        },
-      },
-      ...dailySummaryChildren(sections),
-    ],
-  };
-  if (top[0]) body.after = top[0].id;
-  await notion(`/blocks/${DAILY_PAGE}/children`, { method: 'PATCH', body });
-}
-
-async function updateDailySummary(sections) {
-  const summary = await findDailySummaryBlock();
-  if (!summary) {
-    await createDailySummaryBlock(sections);
-    console.log('Daily summary block created on 매일의 향기 page.');
-    return;
-  }
-
-  await deleteChildren(summary.id);
-  await deleteDailySummarySiblings(summary.id);
-  await notion(`/blocks/${DAILY_PAGE}/children`, {
-    method: 'PATCH',
-    body: { after: summary.id, children: dailySummaryChildren(sections) },
-  });
-  console.log('Daily summary block updated on 매일의 향기 page.');
-}
-
 const daysUntilMonday = (8 - today.getDay()) % 7 || 7;
 const monD = addDays(today, daysUntilMonday);
-const tueD = addDays(monD, 1);
 const wedD = addDays(monD, 2);
-const thuD = addDays(monD, 3);
 const friD = addDays(monD, 4);
 const satD = addDays(monD, 5);
 const sunD = addDays(monD, 6);
 
-const monStr = md(monD), tueStr = md(tueD), wedStr = md(wedD), thuStr = md(thuD), friStr = md(friD), satStr = md(satD), sunStr = md(sunD);
+const monStr = md(monD), wedStr = md(wedD), friStr = md(friD), sunStr = md(sunD);
 
 console.log(`[Today] ${today.toDateString()} -> Mon ${monStr}, Wed ${wedStr}, Fri ${friStr}, Sat ${satStr}, Sun ${sunStr}`);
 
@@ -282,54 +145,6 @@ async function buildDawn() {
     return `${monStr}-${satD.getDate()} 새벽기도회 담당\n설교: ${preacherStr}\n자막: ${captionStr}\n반주: ${accompStr}`;
   }
   throw new Error(`Dawn week not found for ${monStr}`);
-}
-
-function compactTextBlock(text) {
-  return String(text || '')
-    .replace(/\{color="[^"]+"\}/g, '')
-    .replace(/\*/g, '')
-    .replace(/\s*\/\s*/g, ' / ')
-    .replace(/[ \t]+/g, ' ')
-    .trim();
-}
-
-function valueAfter(label, text) {
-  const m = String(text || '').match(new RegExp(`${label}\\s*:?\\s*([^/\\n]+)`));
-  return m ? m[1].trim() : '';
-}
-
-async function buildFirstDay() {
-  const weekDates = [monD, tueD, wedD, thuD, friD, satD, sunD];
-  const eventDate = weekDates.find(date => date.getDate() === 1);
-  if (!eventDate) return '';
-
-  const month = eventDate.getMonth() + 1;
-  const blocks = await getAllChildren(SOURCES.firstDay);
-  const body = blocks.map(blockText).filter(Boolean).join('\n');
-  const sectionMatch = body.match(new RegExp(`${month}월\\s*초하루\\s*새벽기도회([\\s\\S]*?)(?=\\n\\s*\\d{1,2}월\\s*초하루|\\n\\s*월\\s*특순|$)`));
-  if (!sectionMatch) return '';
-
-  const section = compactTextBlock(sectionMatch[1]);
-  const specialLine = section.match(/특순\s*:\s*([^\n]+?)(?=\s*인도\s*:|$)/)?.[1] || '';
-  const special = specialLine.split('/').find(part => part.trim().startsWith('특순'))?.replace(/특순\s*:\s*/, '').trim()
-    || specialLine.split('/')[0]?.trim()
-    || '';
-  const prayer = specialLine.match(/기도\s*:?\s*([^/]+)/)?.[1]?.trim() || '';
-  const lead = valueAfter('인도', section);
-  const worship = valueAfter('찬양', section);
-  const pd = valueAfter('PD', section) || valueAfter('송출영상', section);
-  const caption = valueAfter('자막', section);
-  const dateLabel = `${md(eventDate)}(${WEEKDAYS[eventDate.getDay()]})`;
-
-  return [
-    `${dateLabel} 초하루새벽기도회`,
-    `인도: ${lead || '미정'}`,
-    `찬양: ${worship || '미정'}`,
-    `PD: ${pd || '미정'}`,
-    `자막: ${caption || '미정'}`,
-    `특순: ${special || '미정'}`,
-    `대표기도: ${prayer || '미정'}`,
-  ].join('\n');
 }
 
 function stripTitle(s) {
@@ -394,27 +209,11 @@ async function buildNations() {
 }
 
 const sections = [];
-const dawnSection = await buildDawn();
-const firstDaySection = await buildFirstDay();
-const wedSection = await buildWed();
-const friSection = await buildFri();
-const sunSection = await buildSun();
-const nationsSection = await buildNations();
-
-sections.push(dawnSection);
-sections.push(wedSection);
-sections.push(friSection);
-sections.push(sunSection);
-sections.push(nationsSection);
-
-const dailySections = [
-  dawnSection,
-  firstDaySection,
-  wedSection,
-  friSection,
-  sunSection,
-  nationsSection,
-].filter(Boolean);
+sections.push(await buildDawn());
+sections.push(await buildWed());
+sections.push(await buildFri());
+sections.push(await buildSun());
+sections.push(await buildNations());
 
 console.log('\n----- Generated content -----');
 for (const s of sections) console.log(s + '\n---');
@@ -437,7 +236,3 @@ await notion(`/blocks/${TARGET_PAGE}/children`, {
 });
 
 console.log('\n✅ Notion 한 주간 예배 담당자 페이지 갱신 완료.');
-
-await updateDailySummary(dailySections);
-
-console.log('✅ Notion 매일의 향기 상단 예배 담당자 요약 갱신 완료.');
