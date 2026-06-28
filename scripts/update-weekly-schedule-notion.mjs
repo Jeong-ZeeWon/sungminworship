@@ -16,11 +16,13 @@ const SOURCES = {
   fri:     '2e35e604d8c681df8d57cdbab62ed6ec',
   sun:     '2df5e604d8c6816481c6f31a7070a2d4',
   nations: '2e75e604d8c68020923dd6eeedbdcbcb',
+  firstDay:'2e15e604d8c6806da72cd26a89b1af91',
 };
 
 const DAYS = ['월','화','수','목','금','토'];
-const summaryColors = ['blue_background', 'green_background', 'purple_background', 'yellow_background', 'pink_background'];
-const summaryIcons = ['🌅', '💧', '🔥', '⛪', '🌏'];
+const WEEKDAYS = ['일','월','화','수','목','금','토'];
+const summaryColors = ['blue_background', 'blue_background', 'green_background', 'purple_background', 'yellow_background', 'pink_background'];
+const summaryIcons = ['🌅', '🌅', '💧', '🔥', '⛪', '🌏'];
 
 async function notion(path, options = {}) {
   const res = await fetch(`https://api.notion.com/v1${path}`, {
@@ -118,6 +120,7 @@ function paragraph(content, options = {}) {
 function sectionToSummaryCard(section, index) {
   const [title, ...details] = section.split('\n').map(line => line.trim()).filter(Boolean);
   const detailText = details.length ? `\n${details.join('\n')}` : '';
+  const displayTitle = title.replace(/\s*담당$/, '');
   return {
     object: 'block',
     type: 'callout',
@@ -125,7 +128,7 @@ function sectionToSummaryCard(section, index) {
       icon: { type: 'emoji', emoji: summaryIcons[index] || '🗓️' },
       color: summaryColors[index] || 'gray_background',
       rich_text: [
-        rich(title, { bold: true }),
+        rich(displayTitle, { bold: true }),
         rich(detailText),
       ],
     },
@@ -133,15 +136,21 @@ function sectionToSummaryCard(section, index) {
 }
 
 function dailySummaryChildren(sections) {
+  const groups = [
+    sections.slice(0, 2),
+    sections.slice(2, 4),
+    sections.slice(4, 6),
+  ].filter(group => group.length > 0);
+  let index = 0;
   return [{
     object: 'block',
     type: 'column_list',
     column_list: {
-      children: sections.map((section, index) => ({
+      children: groups.map(group => ({
         object: 'block',
         type: 'column',
         column: {
-          children: [sectionToSummaryCard(section, index)],
+          children: group.map(section => sectionToSummaryCard(section, index++)),
         },
       })),
     },
@@ -275,6 +284,54 @@ async function buildDawn() {
   throw new Error(`Dawn week not found for ${monStr}`);
 }
 
+function compactTextBlock(text) {
+  return String(text || '')
+    .replace(/\{color="[^"]+"\}/g, '')
+    .replace(/\*/g, '')
+    .replace(/\s*\/\s*/g, ' / ')
+    .replace(/[ \t]+/g, ' ')
+    .trim();
+}
+
+function valueAfter(label, text) {
+  const m = String(text || '').match(new RegExp(`${label}\\s*:?\\s*([^/\\n]+)`));
+  return m ? m[1].trim() : '';
+}
+
+async function buildFirstDay() {
+  const weekDates = [monD, tueD, wedD, thuD, friD, satD, sunD];
+  const eventDate = weekDates.find(date => date.getDate() === 1);
+  if (!eventDate) return '';
+
+  const month = eventDate.getMonth() + 1;
+  const blocks = await getAllChildren(SOURCES.firstDay);
+  const body = blocks.map(blockText).filter(Boolean).join('\n');
+  const sectionMatch = body.match(new RegExp(`${month}월\\s*초하루\\s*새벽기도회([\\s\\S]*?)(?=\\n\\s*\\d{1,2}월\\s*초하루|\\n\\s*월\\s*특순|$)`));
+  if (!sectionMatch) return '';
+
+  const section = compactTextBlock(sectionMatch[1]);
+  const specialLine = section.match(/특순\s*:\s*([^\n]+?)(?=\s*인도\s*:|$)/)?.[1] || '';
+  const special = specialLine.split('/').find(part => part.trim().startsWith('특순'))?.replace(/특순\s*:\s*/, '').trim()
+    || specialLine.split('/')[0]?.trim()
+    || '';
+  const prayer = specialLine.match(/기도\s*:?\s*([^/]+)/)?.[1]?.trim() || '';
+  const lead = valueAfter('인도', section);
+  const worship = valueAfter('찬양', section);
+  const pd = valueAfter('PD', section) || valueAfter('송출영상', section);
+  const caption = valueAfter('자막', section);
+  const dateLabel = `${md(eventDate)}(${WEEKDAYS[eventDate.getDay()]})`;
+
+  return [
+    `${dateLabel} 초하루새벽기도회`,
+    `인도: ${lead || '미정'}`,
+    `찬양: ${worship || '미정'}`,
+    `PD: ${pd || '미정'}`,
+    `자막: ${caption || '미정'}`,
+    `특순: ${special || '미정'}`,
+    `대표기도: ${prayer || '미정'}`,
+  ].join('\n');
+}
+
 function stripTitle(s) {
   return String(s || '').replace(/\s*목사$/, '').replace(/\d+-\d+$/, '').trim();
 }
@@ -337,11 +394,27 @@ async function buildNations() {
 }
 
 const sections = [];
-sections.push(await buildDawn());
-sections.push(await buildWed());
-sections.push(await buildFri());
-sections.push(await buildSun());
-sections.push(await buildNations());
+const dawnSection = await buildDawn();
+const firstDaySection = await buildFirstDay();
+const wedSection = await buildWed();
+const friSection = await buildFri();
+const sunSection = await buildSun();
+const nationsSection = await buildNations();
+
+sections.push(dawnSection);
+sections.push(wedSection);
+sections.push(friSection);
+sections.push(sunSection);
+sections.push(nationsSection);
+
+const dailySections = [
+  dawnSection,
+  firstDaySection,
+  wedSection,
+  friSection,
+  sunSection,
+  nationsSection,
+].filter(Boolean);
 
 console.log('\n----- Generated content -----');
 for (const s of sections) console.log(s + '\n---');
@@ -365,6 +438,6 @@ await notion(`/blocks/${TARGET_PAGE}/children`, {
 
 console.log('\n✅ Notion 한 주간 예배 담당자 페이지 갱신 완료.');
 
-await updateDailySummary(sections);
+await updateDailySummary(dailySections);
 
 console.log('✅ Notion 매일의 향기 상단 예배 담당자 요약 갱신 완료.');
