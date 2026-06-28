@@ -117,14 +117,17 @@ function paragraph(content, options = {}) {
 
 function sectionToSummaryCard(section, index) {
   const [title, ...details] = section.split('\n').map(line => line.trim()).filter(Boolean);
+  const detailText = details.length ? `\n${details.join('\n')}` : '';
   return {
     object: 'block',
     type: 'callout',
     callout: {
       icon: { type: 'emoji', emoji: summaryIcons[index] || '🗓️' },
       color: summaryColors[index] || 'gray_background',
-      rich_text: [rich(title, { bold: true })],
-      children: details.map(line => paragraph(line)),
+      rich_text: [
+        rich(title, { bold: true }),
+        rich(detailText),
+      ],
     },
   };
 }
@@ -167,7 +170,7 @@ async function createDailySummaryBlock(sections) {
       type: 'callout',
       callout: {
         icon: { type: 'emoji', emoji: '🗓️' },
-        color: 'blue_background',
+        color: 'gray_background',
         rich_text: [rich(DAILY_SUMMARY_TITLE, { bold: true })],
         children: dailySummaryChildren(sections),
       },
