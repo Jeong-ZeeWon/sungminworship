@@ -8,6 +8,8 @@ const token = process.env.NOTION_TOKEN;
 if (!token) throw new Error('NOTION_TOKEN missing');
 
 const TARGET_PAGE = '35b5e604d8c680aea0c4d47fc08c83f7';
+const DAILY_PAGE = process.env.DAILY_PAGE_ID || '2df5e604d8c68153b64dc76accb69102';
+const DAILY_SUMMARY_TITLE = '이번 주 예배 담당자';
 const SOURCES = {
   dawn:    '2df5e604d8c68142b803c8ada553a6ae',
   wed:     '2e15e604d8c6802f8284dd7ccc553b4f',
@@ -17,6 +19,8 @@ const SOURCES = {
 };
 
 const DAYS = ['월','화','수','목','금','토'];
+const summaryColors = ['blue_background', 'green_background', 'purple_background', 'yellow_background', 'pink_background'];
+const summaryIcons = ['🌅', '💧', '🔥', '⛪', '🌏'];
 
 async function notion(path, options = {}) {
   const res = await fetch(`https://api.notion.com/v1${path}`, {
@@ -80,6 +84,113 @@ const allowOverride = process.env.OVERRIDE_DOW === '1';
 if (![5, 6].includes(today.getDay()) && !allowOverride) {
   console.log(`Today is ${today.toDateString()} (DOW=${today.getDay()}). Not Friday/Saturday. Skipping.`);
   process.exit(0);
+}
+
+function blockText(block) {
+  const body = block[block.type];
+  if (!body?.rich_text) return '';
+  return body.rich_text.map(t => t.plain_text || '').join('').trim();
+}
+
+function rich(content, options = {}) {
+  return {
+    type: 'text',
+    text: { content },
+    annotations: {
+      bold: Boolean(options.bold),
+      italic: false,
+      strikethrough: false,
+      underline: false,
+      code: false,
+      color: options.color || 'default',
+    },
+  };
+}
+
+function paragraph(content, options = {}) {
+  return {
+    object: 'block',
+    type: 'paragraph',
+    paragraph: { rich_text: [rich(content, options)] },
+  };
+}
+
+function sectionToSummaryCard(section, index) {
+  const [title, ...details] = section.split('\n').map(line => line.trim()).filter(Boolean);
+  return {
+    object: 'block',
+    type: 'callout',
+    callout: {
+      icon: { type: 'emoji', emoji: summaryIcons[index] || '🗓️' },
+      color: summaryColors[index] || 'gray_background',
+      rich_text: [rich(title, { bold: true })],
+      children: details.map(line => paragraph(line)),
+    },
+  };
+}
+
+function dailySummaryChildren(sections) {
+  return [
+    {
+      object: 'block',
+      type: 'column_list',
+      column_list: {
+        children: sections.map((section, index) => ({
+          object: 'block',
+          type: 'column',
+          column: {
+            children: [sectionToSummaryCard(section, index)],
+          },
+        })),
+      },
+    },
+  ];
+}
+
+async function deleteChildren(blockId) {
+  const children = await getAllChildren(blockId);
+  for (const child of children) {
+    await notion(`/blocks/${child.id}`, { method: 'DELETE' });
+  }
+}
+
+async function findDailySummaryBlock() {
+  const children = await getAllChildren(DAILY_PAGE);
+  return children.find(block => block.type === 'callout' && blockText(block) === DAILY_SUMMARY_TITLE);
+}
+
+async function createDailySummaryBlock(sections) {
+  const top = await getAllChildren(DAILY_PAGE);
+  const body = {
+    children: [{
+      object: 'block',
+      type: 'callout',
+      callout: {
+        icon: { type: 'emoji', emoji: '🗓️' },
+        color: 'blue_background',
+        rich_text: [rich(DAILY_SUMMARY_TITLE, { bold: true })],
+        children: dailySummaryChildren(sections),
+      },
+    }],
+  };
+  if (top[0]) body.after = top[0].id;
+  await notion(`/blocks/${DAILY_PAGE}/children`, { method: 'PATCH', body });
+}
+
+async function updateDailySummary(sections) {
+  const summary = await findDailySummaryBlock();
+  if (!summary) {
+    await createDailySummaryBlock(sections);
+    console.log('Daily summary block created on 매일의 향기 page.');
+    return;
+  }
+
+  await deleteChildren(summary.id);
+  await notion(`/blocks/${summary.id}/children`, {
+    method: 'PATCH',
+    body: { children: dailySummaryChildren(sections) },
+  });
+  console.log('Daily summary block updated on 매일의 향기 page.');
 }
 
 const daysUntilMonday = (8 - today.getDay()) % 7 || 7;
@@ -238,3 +349,7 @@ await notion(`/blocks/${TARGET_PAGE}/children`, {
 });
 
 console.log('\n✅ Notion 한 주간 예배 담당자 페이지 갱신 완료.');
+
+await updateDailySummary(sections);
+
+console.log('✅ Notion 매일의 향기 상단 예배 담당자 요약 갱신 완료.');
