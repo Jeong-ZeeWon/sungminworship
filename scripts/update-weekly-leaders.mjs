@@ -5,18 +5,36 @@ const pageId = process.env.NOTION_PAGE_ID || '35b5e604d8c680aea0c4d47fc08c83f7';
 
 if (!token) throw new Error('NOTION_TOKEN secret is missing.');
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 const dayNames = ['월', '화', '수', '목', '금', '토'];
 const dayIndex = { 월: 0, 화: 1, 수: 2, 목: 3, 금: 4, 토: 5 };
 
 async function notion(path) {
-  const res = await fetch(`https://api.notion.com/v1${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Notion-Version': '2022-06-28'
+  const maxAttempts = 5;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const res = await fetch(`https://api.notion.com/v1${path}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Notion-Version': '2022-06-28'
+      }
+    });
+
+    if (res.ok) return res.json();
+
+    const body = await res.text();
+    const retryable = res.status === 429 || res.status >= 500;
+    if (!retryable || attempt === maxAttempts) {
+      throw new Error(`Notion API ${res.status}: ${body}`);
     }
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+
+    const retryAfter = Number(res.headers.get('retry-after'));
+    const delayMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? retryAfter * 1000
+      : 1500 * attempt;
+    console.log(`Notion API ${res.status}; retrying in ${delayMs}ms (${attempt}/${maxAttempts})`);
+    await sleep(delayMs);
+  }
 }
 
 function textOf(block) {
