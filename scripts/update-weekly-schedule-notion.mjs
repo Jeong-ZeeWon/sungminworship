@@ -133,7 +133,19 @@ function sectionToSummaryCard(section, index) {
 }
 
 function dailySummaryChildren(sections) {
-  return sections.map((section, index) => sectionToSummaryCard(section, index));
+  return [{
+    object: 'block',
+    type: 'column_list',
+    column_list: {
+      children: sections.map((section, index) => ({
+        object: 'block',
+        type: 'column',
+        column: {
+          children: [sectionToSummaryCard(section, index)],
+        },
+      })),
+    },
+  }];
 }
 
 async function deleteChildren(blockId) {
@@ -148,19 +160,32 @@ async function findDailySummaryBlock() {
   return children.find(block => block.type === 'callout' && blockText(block) === DAILY_SUMMARY_TITLE);
 }
 
+async function deleteDailySummarySiblings(summaryId) {
+  const children = await getAllChildren(DAILY_PAGE);
+  const index = children.findIndex(block => block.id === summaryId);
+  if (index < 0) return;
+
+  const next = children[index + 1];
+  if (next?.type === 'column_list') {
+    await notion(`/blocks/${next.id}`, { method: 'DELETE' });
+  }
+}
+
 async function createDailySummaryBlock(sections) {
   const top = await getAllChildren(DAILY_PAGE);
   const body = {
-    children: [{
-      object: 'block',
-      type: 'callout',
-      callout: {
-        icon: { type: 'emoji', emoji: '🗓️' },
-        color: 'gray_background',
-        rich_text: [rich(DAILY_SUMMARY_TITLE, { bold: true })],
-        children: dailySummaryChildren(sections),
+    children: [
+      {
+        object: 'block',
+        type: 'callout',
+        callout: {
+          icon: { type: 'emoji', emoji: '🗓️' },
+          color: 'gray_background',
+          rich_text: [rich(DAILY_SUMMARY_TITLE, { bold: true })],
+        },
       },
-    }],
+      ...dailySummaryChildren(sections),
+    ],
   };
   if (top[0]) body.after = top[0].id;
   await notion(`/blocks/${DAILY_PAGE}/children`, { method: 'PATCH', body });
@@ -175,9 +200,10 @@ async function updateDailySummary(sections) {
   }
 
   await deleteChildren(summary.id);
-  await notion(`/blocks/${summary.id}/children`, {
+  await deleteDailySummarySiblings(summary.id);
+  await notion(`/blocks/${DAILY_PAGE}/children`, {
     method: 'PATCH',
-    body: { children: dailySummaryChildren(sections) },
+    body: { after: summary.id, children: dailySummaryChildren(sections) },
   });
   console.log('Daily summary block updated on 매일의 향기 page.');
 }
