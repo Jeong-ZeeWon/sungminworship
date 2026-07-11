@@ -52,7 +52,7 @@ async function getTables(pageId) {
   const blocks = await getAllChildren(pageId);
   const tables = [];
   for (const b of blocks) {
-    if (b.type !== 'table') continue;
+    if (b.type === 'column_list' || b.type === 'column') { tables.push(...(await getTables(b.id))); continue; } if (b.type !== 'table') continue;
     const rows = await getAllChildren(b.id);
     tables.push(rows.map(r =>
       r.table_row.cells.map(cell => cell.map(t => t.plain_text || '').join('').trim())
