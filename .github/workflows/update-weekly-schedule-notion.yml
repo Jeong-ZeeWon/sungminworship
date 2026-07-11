@@ -3,9 +3,10 @@ name: Update weekly schedule on Notion
 on:
   schedule:
     # 매주 금요일 23:17, 23:47 KST = 금요일 14:17, 14:47 UTC
-    # GitHub Actions는 정각 cron이 지연/누락될 수 있어 백업 실행을 둡니다.
+    # GitHub Actions는 정각 cron이 지연/누락될 수 있어 백업 실행을 둡니다. (토 09:20 KST 최종 백업)
     - cron: '17 14 * * 5'
     - cron: '47 14 * * 5'
+    - cron: '20 0 * * 6'
   workflow_dispatch:
     inputs:
       override_dow:
