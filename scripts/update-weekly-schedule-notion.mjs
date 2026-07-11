@@ -155,8 +155,8 @@ async function buildWed() {
   const tables = await getTables(SOURCES.wed);
   for (const t of tables) {
     for (const row of t) {
-      if (row[1] === wedStr) {
-        return `${wedStr}(수) 수요예배 담당\n설교: ${stripTitle(row[3])}\n찬양: ${stripTitle(row[4])}\n음향: ${stripTitle(row[5])}\nPD: ${stripTitle(row[6])}`;
+      if (row[0] === wedStr) {
+        return `${wedStr}(수) 수요예배 담당\n설교: ${stripTitle(row[1])}\n찬양: ${stripTitle(row[2])}\n음향: ${stripTitle(row[3])}\nPD: ${stripTitle(row[4])}`;
       }
     }
   }
