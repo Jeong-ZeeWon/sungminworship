@@ -2,8 +2,10 @@ name: Update weekly worship leaders
 
 on:
   schedule:
-    # Every Saturday 09:30 KST = Saturday 00:30 UTC
+    # Every Saturday 09:30 KST = Saturday 00:30 UTC (+ backups 11:30, 14:30 KST)
     - cron: '30 0 * * 6'
+    - cron: '30 2 * * 6'
+    - cron: '30 5 * * 6'
   workflow_dispatch:
   push:
     paths:
