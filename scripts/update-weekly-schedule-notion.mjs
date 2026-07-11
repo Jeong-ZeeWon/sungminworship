@@ -89,7 +89,7 @@ const friD = addDays(monD, 4);
 const satD = addDays(monD, 5);
 const sunD = addDays(monD, 6);
 
-const monStr = md(monD), wedStr = md(wedD), friStr = md(friD), sunStr = md(sunD);
+const monStr = md(monD), wedStr = md(wedD), friStr = md(friD), satStr = md(satD), sunStr = md(sunD);
 
 console.log(`[Today] ${today.toDateString()} -> Mon ${monStr}, Wed ${wedStr}, Fri ${friStr}, Sat ${satStr}, Sun ${sunStr}`);
 
