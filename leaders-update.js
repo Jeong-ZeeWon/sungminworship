@@ -67,8 +67,8 @@ if (typeof churchData !== 'undefined') {
     "secondHost": "박정인",
     "thirdHost": "최명환",
     "firstPd": "최명환",
-    "firstCaption": "박정인",
-    "secondPd": "최명환"
+    "firstCaption": "윤수신",
+    "secondPd": ""
   }
 };
 }
