@@ -8,7 +8,7 @@ if (typeof churchData !== 'undefined') {
   "icon": "👥",
   "color": "ldr",
   "description": "이번 주 새벽·수요·금요·주일 예배 담당자",
-  "week": "9/14 — 9/19",
+  "week": "9/21 — 9/26",
   "dawn": {
     "days": [
       "월",
@@ -19,54 +19,50 @@ if (typeof churchData !== 'undefined') {
       "토"
     ],
     "preacher": [
-      "박정인",
-      "박정인",
-      "찬양/박정인",
-      "찬양/최명환",
-      "최명환",
-      "최명환"
+      "정지원",
+      "정지원",
+      "찬양/정지원",
+      "찬양/노태규",
+      "추석",
+      "노태규"
     ],
     "caption": [
-      "노태규",
-      "노태규",
-      "노태규",
+      "박정인",
+      "박정인",
+      "박정인",
       "윤수신",
-      "윤수신",
+      "추석",
       "윤수신"
     ],
     "accomp": [
-      "미정",
-      "미정",
-      "미정",
-      "미정",
-      "미정",
-      "미정"
+      "김진희",
+      "최우진",
+      "사모님",
+      "김진희",
+      "추석",
+      "최우진"
     ]
   },
   "wednesday": {
-    "date": "9/16(수)",
+    "date": "9/23(수)",
     "preacher": "박정인",
-    "worship": "노태규",
-    "sound": "윤수신",
-    "pd": "최명환"
+    "worship": "윤수신",
+    "sound": "최명환",
+    "pd": "정지원"
   },
   "friday": {
-    "date": "9/18(금)",
-    "worship": "윤수신",
-    "pd": "노태규",
-    "caption": "박정인",
-    "prayer": [
-      "박정인",
-      "노태규",
-      "정지원"
-    ]
+    "date": "9/25(금)",
+    "worship": "",
+    "pd": "",
+    "caption": "",
+    "prayer": []
   },
   "sunday": {
-    "date": "9/20(일)",
+    "date": "9/27(일)",
     "firstHost": "노태규",
-    "secondHost": "박정인",
-    "thirdHost": "최명환",
-    "firstPd": "최명환",
+    "secondHost": "최명환",
+    "thirdHost": "박정인",
+    "firstPd": "박정인",
     "firstCaption": "윤수신",
     "secondPd": ""
   }
