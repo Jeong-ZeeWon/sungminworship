@@ -711,7 +711,6 @@ function serialize(value, indent = 2) {
 }
 
 function buildFile({ sunday, wednesday, friday, qt, qtMonths }) {
-  const generatedAt = new Date().toISOString();
   const counts = `주일 ${sunday.length} · 수요 ${wednesday.length} · 금요 ${friday.length} · 큐티 ${qt.length}`;
   const monthKeys = Object.keys(qtMonths);
   const monthsBlock = monthKeys.length
@@ -719,9 +718,9 @@ function buildFile({ sunday, wednesday, friday, qt, qtMonths }) {
     : '';
 
   return `// ⚠️ 자동 생성 파일입니다. 직접 고치지 마세요. (수정은 scripts/update-schedules.mjs 또는 Notion 원본에서)
-// 원본: 교회 Notion 「주일예배」 「수요예배 담당자」 「금요성령집회」 「매일의 향기」
-// 생성: ${generatedAt} · ${counts}
-// GitHub Actions(.github/workflows/update-weekly-leaders.yml)가 매주 금요일 밤·토요일 아침에 다시 만듭니다.
+// 원본: 교회 Notion 「주일예배」 「수요예배 담당자」 「금요성령집회」 「생명의삶 본문」
+// 건수: ${counts}  (같은 내용이면 파일이 그대로라 커밋되지 않습니다)
+// GitHub Actions(.github/workflows/update-weekly-leaders.yml)가 매주 토요일 아침(KST)에 다시 만듭니다.
 // data.js의 스냅샷 위에 최신 일정만 덮어쓰고, 노션이 준 값이 없는 항목은 기존 값을 그대로 둡니다.
 
 (function () {
