@@ -17,10 +17,16 @@
     return { m: d.getMonth() + 1, day: d.getDate(), dow: KDOW[d.getDay()] };
   }
 
+  // 월 카드의 연도는 데이터에서 가져옵니다. (해가 바뀌어도 표시가 틀리지 않도록)
+  function yearOf(rows) {
+    const first = rows && rows[0] && rows[0].item;
+    return first ? Number(first.date.slice(0, 4)) : new Date().getFullYear();
+  }
+
   function renderQtListAll() {
     currentSection = 'qt';
     const s = churchData.qt;
-    setHeader('📖 큐티 본문', '5–9월 큐티 일정');
+    setHeader('📖 큐티 본문', s.subtitle || '큐티 일정');
 
     const groups = groupAllQtItems();
     const months = Object.keys(groups).map(Number).sort((a, b) => a - b);
@@ -28,10 +34,11 @@
     const body = months.map(month => {
       const summary = s.months?.[month] || '';
       const count = groups[month].length;
+      const year = yearOf(groups[month]);
       return `<div class="svc-item color-qt" data-qt-month-all="${month}">
-        <div class="svc-date"><div class="svc-m">2026</div><div class="svc-d">${month}</div><div class="svc-w">월</div></div>
+        <div class="svc-date"><div class="svc-m">${year}</div><div class="svc-d">${month}</div><div class="svc-w">월</div></div>
         <div class="svc-body">
-          <div class="svc-title">2026년 ${month}월 큐티 본문</div>
+          <div class="svc-title">${year}년 ${month}월 큐티 본문</div>
           <div class="svc-passage">📖 ${summary || '월별 큐티 본문'}</div>
           <div class="svc-extra">전체 ${count}개 본문 보기</div>
         </div>
@@ -68,11 +75,12 @@
     }).join('');
 
     const summary = s.months?.[month] || '';
-    setHeader(`📖 2026년 ${month}월 큐티`, summary || '월별 큐티 본문');
+    const year = yearOf(groups[month]);
+    setHeader(`📖 ${year}년 ${month}월 큐티`, summary || '월별 큐티 본문');
     screens.detail.innerHTML = `<div class="wrap">
       <div class="list-head">
         <span class="list-icon">📖</span>
-        <h2 class="list-title color-qt">2026년 ${month}월 큐티 본문</h2>
+        <h2 class="list-title color-qt">${year}년 ${month}월 큐티 본문</h2>
         <div class="list-desc">${summary}</div>
       </div>
       ${rows || '<div class="theme-box" style="border-color:var(--qt)">표시할 큐티 본문이 없습니다.</div>'}
