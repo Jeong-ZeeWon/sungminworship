@@ -213,12 +213,35 @@ async function pageTitle(pageId) {
     const page = await notion(`/pages/${pageId}`);
     const props = page.properties || {};
     for (const value of Object.values(props)) {
-      if (value.type === 'title') return value.title.map(t => t.plain_text || '').join('').trim();
+      if (value && value.type === 'title') return value.title.map(t => t.plain_text || '').join('').trim();
     }
   } catch (error) {
     console.warn(`(페이지 제목을 읽지 못했습니다: ${pageId}) ${error.message}`);
   }
   return '';
+}
+
+// 어떤 페이지의 부모와 그 부모의 하위 페이지 제목을 봅니다. (큐티 원본 구조 진단용)
+async function describeParent(pageId) {
+  try {
+    const page = await notion(`/pages/${pageId}`);
+    const parent = page.parent || {};
+    const parentId = parent.page_id || parent.database_id || '';
+    let parentTitle = '';
+    let siblings = [];
+    if (parentId) {
+      parentTitle = await pageTitle(parentId);
+      if (parent.type === 'page_id') {
+        const children = await getAllChildren(parentId);
+        siblings = children
+          .filter(block => block.type === 'child_page')
+          .map(block => (block.child_page && block.child_page.title) || block.id);
+      }
+    }
+    return { type: parent.type, parentId, parentTitle, siblings };
+  } catch (error) {
+    return { error: String(error.message || error) };
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -779,11 +802,13 @@ if (qt.length < 5) {
 
   // 읽힌 줄이 큐티 본문이 아닌 경우(안내문뿐인 경우)를 위해, 공유된 다른 후보 페이지를 찾아 남깁니다.
   const seen = new Set();
-  for (const keyword of ['큐티', '생명의삶', '생명의 삶', '매일의 향기']) {
+  for (const keyword of ['큐티', '생명의삶', '생명의 삶', '매일의 향기', '2026년']) {
     for (const found of await searchShared(keyword)) {
       if (seen.has(found.id) || found.id === SOURCES.qt.page) continue;
       seen.add(found.id);
-      console.log(`  ? 후보: ${found.title || '(제목 없음)'} · ${found.id}`);
+      const parent = await describeParent(found.id);
+      const siblings = parent.siblings && parent.siblings.length ? ` · 같은 부모의 페이지: ${parent.siblings.slice(0, 20).join(' / ')}` : '';
+      console.log(`  ? 후보: ${found.title || '(제목 없음)'} · ${found.id} · 부모 ${parent.type || '?'} ${parent.parentTitle ? `「${parent.parentTitle}」` : ''}${siblings}`);
     }
   }
 }
