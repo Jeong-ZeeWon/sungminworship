@@ -126,12 +126,24 @@ async function databaseRows(databaseId) {
 
 // 표(table)를 모두 모읍니다. 컬럼 레이아웃·토글 안에 든 표도 포함하고,
 // 큐티 페이지처럼 월별 하위 페이지로 나뉜 경우를 위해 하위 페이지(depth)까지 들어갑니다.
+// 어떤 블록 종류가 있는지 세어 두면, 표를 못 찾았을 때 원인을 로그로 바로 알 수 있습니다.
+const blockTypeCounts = {};
+function countBlockType(type) {
+  blockTypeCounts[type] = (blockTypeCounts[type] || 0) + 1;
+}
+
 async function collectTables(blockId, { depth = 0, maxDepth = 0, out = [] } = {}) {
   const children = await getAllChildren(blockId);
   for (const block of children) {
+    countBlockType(block.type);
     if (block.type === 'table') {
       const rows = await getAllChildren(block.id);
       out.push(rows.filter(r => r.type === 'table_row').map(r => r.table_row.cells.map(cellText)));
+      continue;
+    }
+    if (block.type === 'synced_block') {
+      const target = (block.synced_block && block.synced_block.synced_from && block.synced_block.synced_from.block_id) || block.id;
+      await collectTables(target, { depth, maxDepth, out });
       continue;
     }
     if (block.type === 'column_list' || block.type === 'column' || block.type === 'toggle') {
@@ -153,9 +165,14 @@ async function collectTables(blockId, { depth = 0, maxDepth = 0, out = [] } = {}
 async function collectTextLines(blockId, { depth = 0, maxDepth = 0, out = [] } = {}) {
   const children = await getAllChildren(blockId);
   for (const block of children) {
-    if (['paragraph', 'bulleted_list_item', 'numbered_list_item', 'quote', 'heading_1', 'heading_2', 'heading_3'].includes(block.type)) {
+    if (['paragraph', 'bulleted_list_item', 'numbered_list_item', 'quote', 'heading_1', 'heading_2', 'heading_3', 'code'].includes(block.type)) {
       const text = blockText(block).trim();
       if (text) out.push(text);
+      continue;
+    }
+    if (block.type === 'synced_block') {
+      const target = (block.synced_block && block.synced_block.synced_from && block.synced_block.synced_from.block_id) || block.id;
+      await collectTextLines(target, { depth, maxDepth, out });
       continue;
     }
     if (block.type === 'column_list' || block.type === 'column' || block.type === 'toggle') {
@@ -365,7 +382,7 @@ function cleanName(value) {
 
 function prayerList(value) {
   return String(value || '')
-    .split(/[,\n/·ㆍ、]+/)
+    .split(/[,\n/·ㆍ、\s]+/)
     .map(cleanName)
     .filter(name => name && name !== '-' && name !== '·');
 }
@@ -442,6 +459,7 @@ function itemsFromTables(section, tables) {
       const staffKeys = Object.keys(mapping.staff);
       const fieldKeys = Object.keys(mapping.fields);
       console.log(`  · ${section} 표 ${index + 1}: 머리글 ${headerRow + 1}행 · 날짜 ${mapping.date}열 · 담당 [${staffKeys.join(', ')}] · 항목 [${fieldKeys.join(', ')}]`);
+      console.log(`    머리글 값: ${JSON.stringify((rows[headerRow] || []).slice(0, 14))}`);
       for (let r = headerRow + 1; r < rows.length; r++) {
         const item = buildItem(section, mapping, rows[r]);
         if (item) items.set(item.date, Object.assign(items.get(item.date) || {}, item));
@@ -469,7 +487,17 @@ function itemsFromTables(section, tables) {
 }
 
 // 본문 모양(예: 「시 135:1~12」, 「대상 1~3장」, 「고전 11:1~16」)인지 확인하는 규칙
+// 장·절 표시(':')나 '장/편/절'이 없으면 본문으로 보지 않습니다.
+// ("천성진 11" 같은 인도자 목록 줄을 본문으로 잘못 읽던 문제를 막습니다.)
 const PASSAGE_RE = /^(?:[1-3]\s*)?[가-힣]{1,4}\s*\d+(?:\s*[:：]\s*\d+)?(?:\s*[~–—-]\s*\d+(?:\s*[:：]\s*\d+)?)?(?:\s*[장편])?/;
+
+function looksLikePassage(text) {
+  const value = String(text || '').trim();
+  if (!value) return false;
+  if (/[\n\r]/.test(value)) return false;
+  if (!/[:：장편절]/.test(value)) return false;
+  return PASSAGE_RE.test(value);
+}
 
 // 한 줄 텍스트로 적힌 큐티 일정("11/27(금) 시 120:1~7 제목")을 읽습니다.
 function itemsFromLines(lines) {
@@ -482,7 +510,7 @@ function itemsFromLines(lines) {
     if (!rest) continue;
 
     const passageMatch = rest.match(PASSAGE_RE);
-    const passage = passageMatch ? passageMatch[0].trim() : '';
+    const passage = passageMatch && looksLikePassage(passageMatch[0]) ? passageMatch[0].trim() : '';
     const title = passageMatch ? rest.slice(passageMatch[0].length).replace(/^[\s|,\-–—:：·]+/, '').trim() : rest;
 
     const parsed = parseDateCell(`${datePart[1]}/${datePart[2]}${datePart[3] ? `(${datePart[3]})` : ''}`);
@@ -597,6 +625,7 @@ for (const key of Object.keys(SOURCES)) {
 
 console.log('원본 읽기 결과');
 for (const line of report) console.log(line);
+console.log(`  블록 종류: ${Object.entries(blockTypeCounts).map(([type, count]) => `${type} ${count}`).join(', ') || '(없음)'}`);
 
 if (INSPECT) {
   for (const key of Object.keys(SOURCES)) {
@@ -653,6 +682,13 @@ if (coreEmpty) {
 if (!qt.length) {
   console.warn('\n! 큐티 본문은 읽지 못했습니다. (기존 data.js 큐티 데이터는 그대로 남습니다)');
   console.warn('  --inspect 로 「매일의 향기」 페이지 구조를 확인해 주세요.');
+}
+
+// 큐티 페이지는 표 없이 글줄로만 되어 있는 경우가 많아, 읽은 줄을 로그에 남겨 둡니다.
+// (결과가 비거나 적을 때 원본 표기를 바로 확인할 수 있게 합니다.)
+if (qt.length < 5 && sources.qt.lines.length) {
+  console.log('\n큐티 원본 글줄(진단용):');
+  sources.qt.lines.slice(0, 20).forEach(text => console.log(`  | ${text.slice(0, 140).replace(/\n/g, ' ⏎ ')}`));
 }
 
 await writeFile(OUT_FILE, buildFile({ sunday, wednesday, friday, qt, qtMonths }), 'utf8');
