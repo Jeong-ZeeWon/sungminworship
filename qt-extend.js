@@ -1,13 +1,16 @@
 // Notion source: 생명의삶 본문(2026년 9월까지)
 // This file extends churchData.qt without touching the main data.js file.
 
-churchData.qt.months = {
+// 이 파일은 2026년 9월까지의 본문을 담습니다.
+// 10월 이후 본문은 Notion 동기화(leaders-update.js)가 채우므로,
+// 월별 요약은 덮어쓰지 말고 비어 있는 달만 채웁니다.
+churchData.qt.months = Object.assign({
   5: '룻기, 고린도전서 1–10장',
   6: '고린도전서 11–16장, 요나, 나훔',
   7: '시편 107–118편, 에스겔 25–33장',
   8: '에스겔 34–48장',
   9: '시편 119편, 역대상 1–16장'
-};
+}, churchData.qt.months || {});
 
 const qtExtensionItems = [
   // 2026년 7월
