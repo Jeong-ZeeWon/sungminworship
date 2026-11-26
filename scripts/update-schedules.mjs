@@ -642,8 +642,63 @@ async function readSource(key) {
 const report = [];
 const sources = {};
 for (const key of Object.keys(SOURCES)) {
+  if (key === 'qt') continue; // 큐티는 월별 페이지에서 따로 읽습니다.
   sources[key] = await readSource(key);
   report.push(`- ${SOURCES[key].label}: 표 ${sources[key].tables.length}개, 텍스트 줄 ${sources[key].lines.length}개`);
+}
+
+// ---------------------------------------------------------------------------
+// 큐티 본문: 「2026년 N월 큐티 본문」 페이지
+//
+// 「매일의 향기」 하위에 달마다 페이지가 따로 있고, 그 안에 날짜·본문 표가 있습니다.
+// 페이지 ID가 달라져도 따라갈 수 있도록 제목으로 찾습니다(지난달~두 달 뒤).
+// ---------------------------------------------------------------------------
+const QT_MONTH_OFFSETS = [-1, 0, 1, 2];
+
+async function resolveQtPages() {
+  const pages = [];
+  for (const offset of QT_MONTH_OFFSETS) {
+    const base = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth() + offset, 1));
+    const title = `${base.getUTCFullYear()}년 ${base.getUTCMonth() + 1}월 큐티 본문`;
+    const wanted = title.replace(/\s+/g, '');
+    const matches = (await searchShared(title)).filter(result => result.title.replace(/\s+/g, '') === wanted);
+    if (!matches.length) {
+      console.log(`  (큐티 페이지를 찾지 못했습니다: ${title})`);
+      continue;
+    }
+    pages.push({ id: matches[0].id, title });
+  }
+  return pages;
+}
+
+const qtPages = await resolveQtPages();
+const qtTables = [];
+const qtLines = [];
+const qtPageNotes = [];
+for (const page of qtPages) {
+  childPageTitles.length = 0;
+  const tables = await collectTables(page.id, { maxDepth: 1 });
+  const lines = await collectTextLines(page.id, { maxDepth: 1 });
+  qtTables.push(...tables);
+  qtLines.push(...lines);
+  const note = `${page.title}: 표 ${tables.length}개, 줄 ${lines.length}개`;
+  qtPageNotes.push(note);
+  console.log(`  · ${note}`);
+  tables.forEach((rows, index) => console.log(`      [표 ${index + 1}] 행 ${rows.length} · 첫 줄 ${JSON.stringify((rows[0] || []).slice(0, 8))}`));
+  lines.slice(0, 5).forEach(text => console.log(`      | ${text.slice(0, 120).replace(/\n/g, ' ⏎ ')}`));
+}
+
+if (qtPages.length) {
+  sources.qt = {
+    source: { label: '큐티 본문(월별)', page: qtPages[0].id },
+    tables: qtTables,
+    lines: qtLines,
+    childPageTitles: qtPageNotes
+  };
+  report.push(`- 큐티 본문(월별 ${qtPages.length}개 페이지): 표 ${qtTables.length}개, 텍스트 줄 ${qtLines.length}개`);
+} else {
+  sources.qt = await readSource('qt');
+  report.push(`- ${SOURCES.qt.label}: 표 ${sources.qt.tables.length}개, 텍스트 줄 ${sources.qt.lines.length}개`);
 }
 
 console.log('원본 읽기 결과');
