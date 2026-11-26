@@ -132,6 +132,9 @@ function countBlockType(type) {
   blockTypeCounts[type] = (blockTypeCounts[type] || 0) + 1;
 }
 
+// 하위 페이지 제목을 모아 둔다. (원본 구조를 로그로 확인하기 위한 진단용)
+const childPageTitles = [];
+
 async function collectTables(blockId, { depth = 0, maxDepth = 0, out = [] } = {}) {
   const children = await getAllChildren(blockId);
   for (const block of children) {
@@ -156,6 +159,7 @@ async function collectTables(blockId, { depth = 0, maxDepth = 0, out = [] } = {}
       continue;
     }
     if (block.type === 'child_page' && depth < maxDepth) {
+      childPageTitles.push(block.child_page && block.child_page.title ? block.child_page.title : block.id);
       await collectTables(block.id, { depth: depth + 1, maxDepth, out });
     }
   }
@@ -184,6 +188,24 @@ async function collectTextLines(blockId, { depth = 0, maxDepth = 0, out = [] } =
     }
   }
   return out;
+}
+
+// 공유된 페이지/DB를 제목으로 찾습니다. (진단용)
+async function searchShared(query) {
+  try {
+    const data = await notion('/search', { method: 'POST', body: { query, page_size: 20 } });
+    return (data.results || []).map(result => {
+      const props = result.properties || {};
+      const titleProp = Object.values(props).find(value => value && value.type === 'title');
+      const title = titleProp && Array.isArray(titleProp.title)
+        ? titleProp.title.map(t => t.plain_text || '').join('')
+        : (Array.isArray(result.title) ? result.title.map(t => t.plain_text || '').join('') : '');
+      return { id: result.id, title: title.trim(), type: result.object };
+    });
+  } catch (error) {
+    console.warn(`(검색 실패: ${query}) ${error.message}`);
+    return [];
+  }
 }
 
 async function pageTitle(pageId) {
@@ -611,9 +633,10 @@ ${monthsBlock}    var months = churchData.qt.items.map(function (item) { return 
 async function readSource(key) {
   const source = SOURCES[key];
   const maxDepth = key === 'qt' ? 2 : 1;
+  childPageTitles.length = 0;
   const tables = await collectTables(source.page, { maxDepth });
   const lines = await collectTextLines(source.page, { maxDepth });
-  return { source, tables, lines };
+  return { source, tables, lines, childPageTitles: [...childPageTitles] };
 }
 
 const report = [];
@@ -626,6 +649,15 @@ for (const key of Object.keys(SOURCES)) {
 console.log('원본 읽기 결과');
 for (const line of report) console.log(line);
 console.log(`  블록 종류: ${Object.entries(blockTypeCounts).map(([type, count]) => `${type} ${count}`).join(', ') || '(없음)'}`);
+
+// 표를 못 찾거나 열을 못 맞출 때 원인을 볼 수 있도록, 모은 표의 머리글을 모두 남깁니다.
+for (const key of Object.keys(SOURCES)) {
+  const { source, tables, childPageTitles: titles } = sources[key];
+  if (titles.length) console.log(`  ${source.label} 하위 페이지: ${titles.slice(0, 12).join(' / ')}`);
+  tables.forEach((rows, index) => {
+    console.log(`  ${source.label} [표 ${index + 1}] 행 ${rows.length} · 첫 줄 ${JSON.stringify((rows[0] || []).slice(0, 10))}`);
+  });
+}
 
 if (INSPECT) {
   for (const key of Object.keys(SOURCES)) {
@@ -686,9 +718,19 @@ if (!qt.length) {
 
 // 큐티 페이지는 표 없이 글줄로만 되어 있는 경우가 많아, 읽은 줄을 로그에 남겨 둡니다.
 // (결과가 비거나 적을 때 원본 표기를 바로 확인할 수 있게 합니다.)
-if (qt.length < 5 && sources.qt.lines.length) {
+if (qt.length < 5) {
   console.log('\n큐티 원본 글줄(진단용):');
   sources.qt.lines.slice(0, 20).forEach(text => console.log(`  | ${text.slice(0, 140).replace(/\n/g, ' ⏎ ')}`));
+
+  // 읽힌 줄이 큐티 본문이 아닌 경우(안내문뿐인 경우)를 위해, 공유된 다른 후보 페이지를 찾아 남깁니다.
+  const seen = new Set();
+  for (const keyword of ['큐티', '생명의삶', '생명의 삶', '매일의 향기']) {
+    for (const found of await searchShared(keyword)) {
+      if (seen.has(found.id) || found.id === SOURCES.qt.page) continue;
+      seen.add(found.id);
+      console.log(`  ? 후보: ${found.title || '(제목 없음)'} · ${found.id}`);
+    }
+  }
 }
 
 await writeFile(OUT_FILE, buildFile({ sunday, wednesday, friday, qt, qtMonths }), 'utf8');
