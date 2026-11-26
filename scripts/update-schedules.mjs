@@ -428,18 +428,28 @@ function dateCandidates(text, ref = TODAY) {
 }
 
 // "11/30(일)", "11/30", "2026-11-30", "11월 30일" 등을 YYYY-MM-DD로.
-// 연도가 없으면 오늘과 가장 가까운 해를 고르되, 요일 표기가 있으면 요일까지 맞는 해를 씁니다.
-function parseDateCell(text, ref = TODAY, forcedYear = 0) {
-  const candidates = dateCandidates(text, ref).filter(candidate => !forcedYear || candidate.year === forcedYear);
+// 연도가 없으면 그 예배의 요일(주일=일, 수요=수, 금요=금)이 맞는 해를 먼저 고릅니다.
+// (2026년 봄 기록이 2027년 일정으로 둔갑하는 것을 막고, 연말~연초에 걸친 표도 제대로 읽습니다.)
+function parseDateCell(text, ref = TODAY, expectedDow = -1) {
+  const candidates = dateCandidates(text, ref);
   if (!candidates.length) return null;
 
-  let best = null;
-  for (const candidate of candidates) {
-    // 요일 표기와 어긋나는 해는 '60일' 정도의 벌점만 주고, 보통은 오늘과 가까운 해를 고릅니다.
-    const score = Math.abs(candidate.diffDays) + (candidate.dowOk ? 0 : 60);
-    if (!best || score < best.score) best = { score, date: candidate.date, diffDays: candidate.diffDays };
+  const inWindow = candidate => candidate.diffDays >= -PAST_DAYS && candidate.diffDays <= FUTURE_DAYS;
+  let pool = candidates;
+  if (expectedDow >= 0) {
+    const dowMatch = candidates.filter(candidate => candidate.dow === expectedDow);
+    if (dowMatch.length) pool = dowMatch;
   }
-  return best ? { date: best.date, diffDays: best.diffDays } : null;
+
+  const best = pool
+    .map(candidate => ({
+      candidate,
+      score: (inWindow(candidate) ? 100 : 0) + (candidate.dowOk ? 10 : 0) - Math.abs(candidate.diffDays) / 1000
+    }))
+    .sort((a, b) => b.score - a.score)[0]
+    .candidate;
+
+  return { date: best.date, diffDays: best.diffDays };
 }
 
 function cleanName(value) {
@@ -465,9 +475,10 @@ function positiveInt(value) {
 // 표 → 앱 데이터
 // ---------------------------------------------------------------------------
 
-function buildItem(section, mapping, row, forcedYear = 0) {
+function buildItem(section, mapping, row) {
   const dateText = row[mapping.date];
-  const parsed = parseDateCell(dateText, TODAY, forcedYear);
+  const spec = COLUMN_SPECS[section];
+  const parsed = parseDateCell(dateText, TODAY, spec && typeof spec.expectedDow === 'number' ? spec.expectedDow : -1);
   if (!parsed) return null;
   if (parsed.diffDays < -PAST_DAYS || parsed.diffDays > FUTURE_DAYS) return null;
 
@@ -506,32 +517,6 @@ function buildItem(section, mapping, row, forcedYear = 0) {
   return filled ? item : null;
 }
 
-// 표 하나의 연도를 정합니다.
-// "3/22" 처럼 연도가 없는 칸은 지난해·올해·내년 모두 가능한데, 그 표의 행들이
-// 그 예배의 요일(주일=일, 수요=수, 금요=금)과 맞는 해를 고릅니다.
-// 이렇게 하면 예전 기록 표(2026년 봄)가 내년 날짜로 둔갑해 목록에 끼는 일이 없습니다.
-function chooseTableYear(rows, mapping, headerRow, expectedDow) {
-  const scores = new Map();
-  for (let r = Math.max(headerRow + 1, 0); r < rows.length; r++) {
-    for (const candidate of dateCandidates(rows[r][mapping.date])) {
-      let score = scores.get(candidate.year) || 0;
-      if (expectedDow >= 0 && candidate.dow === expectedDow) score += 3;
-      else if (candidate.dowOk) score += 2;
-      if (candidate.diffDays >= -PAST_DAYS && candidate.diffDays <= FUTURE_DAYS) score += 1;
-      scores.set(candidate.year, score);
-    }
-  }
-  let bestYear = 0;
-  let bestScore = -1;
-  for (const [year, score] of scores) {
-    if (score > bestScore) {
-      bestYear = year;
-      bestScore = score;
-    }
-  }
-  return bestYear;
-}
-
 function itemsFromTables(section, tables) {
   const spec = COLUMN_SPECS[section];
   const items = new Map();
@@ -553,11 +538,10 @@ function itemsFromTables(section, tables) {
     headerMatches.forEach(({ rows, mapping, headerRow }, index) => {
       const staffKeys = Object.keys(mapping.staff);
       const fieldKeys = Object.keys(mapping.fields);
-      const forcedYear = chooseTableYear(rows, mapping, headerRow, spec.expectedDow ?? -1);
-      console.log(`  · ${section} 표 ${index + 1}: 머리글 ${headerRow + 1}행 · 날짜 ${mapping.date}열 · 연도 ${forcedYear || '자동'} · 담당 [${staffKeys.join(', ')}] · 항목 [${fieldKeys.join(', ')}]`);
+      console.log(`  · ${section} 표 ${index + 1}: 머리글 ${headerRow + 1}행 · 날짜 ${mapping.date}열 · 담당 [${staffKeys.join(', ')}] · 항목 [${fieldKeys.join(', ')}]`);
       console.log(`    머리글 값: ${JSON.stringify((rows[headerRow] || []).slice(0, 14))}`);
       for (let r = headerRow + 1; r < rows.length; r++) {
-        const item = buildItem(section, mapping, rows[r], forcedYear);
+        const item = buildItem(section, mapping, rows[r]);
         if (item) items.set(item.date, Object.assign(items.get(item.date) || {}, item));
       }
     });
@@ -573,9 +557,8 @@ function itemsFromTables(section, tables) {
     if (looksExcluded(rows, excludeWords)) continue;
     console.log(`  · ${section} 표: 머리글이 없어 기존 열 순서로 읽습니다.`);
     const mapping = fallbackMapping(spec);
-    const forcedYear = chooseTableYear(rows, mapping, -1, spec.expectedDow ?? -1);
     for (const row of rows) {
-      const item = buildItem(section, mapping, row, forcedYear);
+      const item = buildItem(section, mapping, row);
       if (item) items.set(item.date, Object.assign(items.get(item.date) || {}, item));
     }
     if (items.size) break;
