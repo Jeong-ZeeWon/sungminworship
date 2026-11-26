@@ -77,7 +77,7 @@ if (typeof churchData !== 'undefined') {
 
 // ⚠️ 자동 생성 파일입니다. 직접 고치지 마세요. (수정은 scripts/update-schedules.mjs 또는 Notion 원본에서)
 // 원본: 교회 Notion 「주일예배」 「수요예배 담당자」 「금요성령집회」 「매일의 향기」
-// 생성: 2026-11-26T15:03:52.877Z · 주일 23 · 수요 37 · 금요 37 · 큐티 1
+// 생성: 2026-11-26T15:06:51.508Z · 주일 23 · 수요 37 · 금요 37 · 큐티 0
 // GitHub Actions(.github/workflows/update-weekly-leaders.yml)가 매주 금요일 밤·토요일 아침에 다시 만듭니다.
 // data.js의 스냅샷 위에 최신 일정만 덮어쓰고, 노션이 준 값이 없는 항목은 기존 값을 그대로 둡니다.
 
@@ -642,7 +642,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "김은형",
     "caption": "노태규",
     "prayer": [
-      "노태규 김은형 하태양"
+      "노태규",
+      "김은형",
+      "하태양"
     ]
   },
   {
@@ -651,7 +653,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "최명환",
     "caption": "윤수신",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   },
   {
@@ -660,7 +663,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "박정인",
     "prayer": [
-      "박정인 노태규 정지원"
+      "박정인",
+      "노태규",
+      "정지원"
     ]
   },
   {
@@ -669,7 +674,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "박정인",
     "caption": "노태규",
     "prayer": [
-      "최명환 김은형 하태양"
+      "최명환",
+      "김은형",
+      "하태양"
     ]
   },
   {
@@ -678,7 +685,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "박정인",
     "prayer": [
-      "박정인 노태규 하태양"
+      "박정인",
+      "노태규",
+      "하태양"
     ]
   },
   {
@@ -687,7 +696,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "윤수신",
     "prayer": [
-      "최명환 윤수신 김은형"
+      "최명환",
+      "윤수신",
+      "김은형"
     ]
   },
   {
@@ -696,7 +707,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "박정인",
     "prayer": [
-      "박정인 노태규 정지원"
+      "박정인",
+      "노태규",
+      "정지원"
     ]
   },
   {
@@ -705,7 +718,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "최명환",
     "caption": "노태규",
     "prayer": [
-      "최명환 정지원 김은형"
+      "최명환",
+      "정지원",
+      "김은형"
     ]
   },
   {
@@ -714,7 +729,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "박정인",
     "caption": "윤수신",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   },
   {
@@ -723,7 +739,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "박정인",
     "prayer": [
-      "박정인 최명환 노태규"
+      "박정인",
+      "최명환",
+      "노태규"
     ]
   },
   {
@@ -732,7 +750,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "윤수신",
     "caption": "노태규",
     "prayer": [
-      "박정인 윤수신 김은형"
+      "박정인",
+      "윤수신",
+      "김은형"
     ]
   },
   {
@@ -741,7 +761,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "박정인",
     "prayer": [
-      "노태규 정지원 윤수신"
+      "노태규",
+      "정지원",
+      "윤수신"
     ]
   },
   {
@@ -750,7 +772,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "박정인",
     "caption": "노태규",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   },
   {
@@ -792,7 +815,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "박정인",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   },
   {
@@ -827,7 +851,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "박정인",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   },
   {
@@ -880,7 +905,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "박정인",
     "caption": "노태규",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   },
   {
@@ -922,7 +948,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "윤수신",
     "caption": "노태규",
     "prayer": [
-      "최명환 노태규 윤수신"
+      "최명환",
+      "노태규",
+      "윤수신"
     ]
   },
   {
@@ -931,7 +959,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "박정인",
     "caption": "정지원",
     "prayer": [
-      "박정인 정지원 김은형"
+      "박정인",
+      "정지원",
+      "김은형"
     ]
   },
   {
@@ -940,7 +970,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "정지원",
     "caption": "박정인",
     "prayer": [
-      "최명환 노태규 정지원"
+      "최명환",
+      "노태규",
+      "정지원"
     ]
   },
   {
@@ -949,7 +981,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "윤수신",
     "prayer": [
-      "박정인 윤수신 김은형"
+      "박정인",
+      "윤수신",
+      "김은형"
     ]
   },
   {
@@ -958,7 +992,8 @@ if (typeof churchData !== 'undefined') {
     "pd": "박정인",
     "caption": "정지원",
     "prayer": [
-      "민꿈 교역자"
+      "민꿈",
+      "교역자"
     ]
   },
   {
@@ -967,7 +1002,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "윤수신",
     "caption": "노태규",
     "prayer": [
-      "최명환 노태규 윤수신"
+      "최명환",
+      "노태규",
+      "윤수신"
     ]
   },
   {
@@ -976,7 +1013,9 @@ if (typeof churchData !== 'undefined') {
     "pd": "정지원",
     "caption": "박정인",
     "prayer": [
-      "박정인 정지원 김은형"
+      "박정인",
+      "정지원",
+      "김은형"
     ]
   },
   {
@@ -985,18 +1024,14 @@ if (typeof churchData !== 'undefined') {
     "pd": "노태규",
     "caption": "윤수신",
     "prayer": [
-      "최명환 노태규 윤수신"
+      "최명환",
+      "노태규",
+      "윤수신"
     ]
   }
 ]);
 
-  mergeByDate(churchData.qt && churchData.qt.items, [
-  {
-    "date": "2026-11-15",
-    "passage": "천성진\n11",
-    "title": "/22 조정구\n11/29 김철상\n12/13 신두호\n12/20 천성진"
-  }
-]);
+  mergeByDate(churchData.qt && churchData.qt.items, []);
 
   if (churchData.qt && churchData.qt.items && churchData.qt.items.length) {
     var months = churchData.qt.items.map(function (item) { return Number(item.date.slice(5, 7)); });
