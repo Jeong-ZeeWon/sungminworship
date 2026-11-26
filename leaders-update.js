@@ -77,7 +77,7 @@ if (typeof churchData !== 'undefined') {
 
 // ⚠️ 자동 생성 파일입니다. 직접 고치지 마세요. (수정은 scripts/update-schedules.mjs 또는 Notion 원본에서)
 // 원본: 교회 Notion 「주일예배」 「수요예배 담당자」 「금요성령집회」 「매일의 향기」
-// 생성: 2026-11-26T15:20:44.052Z · 주일 13 · 수요 25 · 금요 29 · 큐티 89
+// 생성: 2026-11-26T15:22:37.985Z · 주일 13 · 수요 25 · 금요 29 · 큐티 89
 // GitHub Actions(.github/workflows/update-weekly-leaders.yml)가 매주 금요일 밤·토요일 아침에 다시 만듭니다.
 // data.js의 스냅샷 위에 최신 일정만 덮어쓰고, 노션이 준 값이 없는 항목은 기존 값을 그대로 둡니다.
 
@@ -1158,9 +1158,9 @@ if (typeof churchData !== 'undefined') {
     var todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
     var upcoming = churchData.qt.items.filter(function (item) { return item.date >= todayStr; });
     var basis = upcoming.length ? upcoming : churchData.qt.items;
-    var months = basis.map(function (item) { return Number(item.date.slice(5, 7)); });
-    var first = Math.min.apply(null, months);
-    var last = Math.max.apply(null, months);
+    basis.sort(function (a, b) { return a.date.localeCompare(b.date); });
+    var first = Number(basis[0].date.slice(5, 7));
+    var last = Number(basis[basis.length - 1].date.slice(5, 7));
     churchData.qt.subtitle = first === last ? first + '월 큐티 일정' : first + '–' + last + '월 큐티 일정';
   }
 })();
