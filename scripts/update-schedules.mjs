@@ -671,26 +671,25 @@ for (const key of Object.keys(SOURCES)) {
 }
 
 // ---------------------------------------------------------------------------
-// 큐티 본문: 「2026년 N월 큐티 본문」 페이지
+// 큐티 본문: 「생명의삶 본문(YYYY년 M월까지)」 페이지
 //
-// 「매일의 향기」 하위에 달마다 페이지가 따로 있고, 그 안에 날짜·본문 표가 있습니다.
-// 페이지 ID가 달라져도 따라갈 수 있도록 제목으로 찾습니다(지난달~두 달 뒤).
+// 「매일의 향기」 아님: 실제 큐티 본문은 「생명의삶 본문」 페이지(와 그 하위 월별 페이지)에 있습니다.
+// 페이지 제목에 적힌 ‘~월까지’가 가장 늦은 페이지를 골라 읽으므로, 새 페이지가 생겨도 따라갑니다.
 // ---------------------------------------------------------------------------
-const QT_MONTH_OFFSETS = [-1, 0, 1, 2];
 
 async function resolveQtPages() {
-  const pages = [];
-  for (const offset of QT_MONTH_OFFSETS) {
-    const base = new Date(Date.UTC(TODAY.getUTCFullYear(), TODAY.getUTCMonth() + offset, 1));
-    const title = `${base.getUTCFullYear()}년 ${base.getUTCMonth() + 1}월 큐티 본문`;
-    const wanted = title.replace(/\s+/g, '');
-    const matches = (await searchShared(title)).filter(result => result.title.replace(/\s+/g, '') === wanted);
-    if (!matches.length) {
-      console.log(`  (큐티 페이지를 찾지 못했습니다: ${title})`);
-      continue;
-    }
-    pages.push({ id: matches[0].id, title });
+  const candidates = (await searchShared('생명의삶 본문')).filter(result => /생명의삶\s*본문/.test(result.title));
+  if (!candidates.length) {
+    console.log('  (「생명의삶 본문」 페이지를 찾지 못했습니다)');
+    return [];
   }
+  const scored = candidates.map(result => {
+    const end = result.title.match(/(\d{4})\s*년\s*(\d{1,2})\s*월\s*까지/);
+    const endScore = end ? Number(end[1]) * 12 + Number(end[2]) : 0;
+    return { ...result, endScore };
+  }).sort((a, b) => b.endScore - a.endScore);
+  const pages = [scored[0]];
+  console.log(`  · 큐티 원본으로 사용: ${scored[0].title} (${scored[0].id})`);
   return pages;
 }
 
