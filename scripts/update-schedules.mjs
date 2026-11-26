@@ -708,6 +708,13 @@ for (const page of qtPages) {
   console.log(`  · ${note}`);
   tables.forEach((rows, index) => console.log(`      [표 ${index + 1}] 행 ${rows.length} · 첫 줄 ${JSON.stringify((rows[0] || []).slice(0, 8))}`));
   lines.slice(0, 5).forEach(text => console.log(`      | ${text.slice(0, 120).replace(/\n/g, ' ⏎ ')}`));
+  if (qtTables.length) {
+    console.log('      (큐티 표 내용 — 진단용)');
+    tables.forEach((rows, index) => {
+      console.log(`      [표 ${index + 1}]`);
+      rows.forEach(row => console.log(`        ${row.map(cell => String(cell || '').replace(/\n/g, ' ').slice(0, 32)).join(' | ')}`));
+    });
+  }
 }
 
 if (qtPages.length) {
