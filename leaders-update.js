@@ -77,7 +77,7 @@ if (typeof churchData !== 'undefined') {
 
 // ⚠️ 자동 생성 파일입니다. 직접 고치지 마세요. (수정은 scripts/update-schedules.mjs 또는 Notion 원본에서)
 // 원본: 교회 Notion 「주일예배」 「수요예배 담당자」 「금요성령집회」 「매일의 향기」
-// 생성: 2026-11-26T15:13:28.530Z · 주일 23 · 수요 37 · 금요 37 · 큐티 0
+// 생성: 2026-11-26T15:15:18.428Z · 주일 23 · 수요 37 · 금요 37 · 큐티 0
 // GitHub Actions(.github/workflows/update-weekly-leaders.yml)가 매주 금요일 밤·토요일 아침에 다시 만듭니다.
 // data.js의 스냅샷 위에 최신 일정만 덮어쓰고, 노션이 준 값이 없는 항목은 기존 값을 그대로 둡니다.
 
