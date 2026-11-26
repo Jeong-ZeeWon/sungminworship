@@ -6,7 +6,13 @@ function syncHomeHeader(){
   const qt = typeof churchData !== 'undefined' ? churchData.qt : null;
   const items = qt && Array.isArray(qt.items) ? qt.items : [];
   if (!items.length) return;
-  const months = items.map(item => Number(item.date.slice(5, 7)));
+  // 앞으로 남은 큐티 본문의 달만 보여 줍니다. (지난 본문이 범위를 넓히지 않도록)
+  const pad = n => (n < 10 ? '0' : '') + n;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const upcoming = items.filter(item => item.date >= today);
+  const basis = upcoming.length ? upcoming : items;
+  const months = basis.map(item => Number(item.date.slice(5, 7)));
   const first = Math.min(...months);
   const last = Math.max(...months);
   badge.replaceChildren(first === last ? `${first}월` : `${first}–${last}월`);

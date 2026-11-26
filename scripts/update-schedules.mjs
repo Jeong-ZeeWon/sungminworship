@@ -251,6 +251,8 @@ async function describeParent(pageId) {
 
 const COLUMN_SPECS = {
   sun: {
+    // 주일예배는 일요일. 연도가 없는 날짜를 읽을 때 요일을 함께 맞춰 봅니다.
+    expectedDow: 0,
     date: ['날짜', '일자', '예배일', '주일'],
     targets: [
       { target: 'staff', key: '1부 사회', aliases: ['1부사회', '1부 사회자', '1부사회자'] },
@@ -281,6 +283,7 @@ const COLUMN_SPECS = {
   },
 
   wed: {
+    expectedDow: 3,
     date: ['날짜', '일자', '예배일'],
     targets: [
       { target: 'field', key: 'preacher', aliases: ['설교', '설교자'] },
@@ -299,6 +302,7 @@ const COLUMN_SPECS = {
   },
 
   fri: {
+    expectedDow: 5,
     date: ['날짜', '일자', '집회일'],
     targets: [
       { target: 'field', key: 'worship', aliases: ['찬양'] },
@@ -318,6 +322,7 @@ const COLUMN_SPECS = {
   },
 
   qt: {
+    expectedDow: -1,
     date: ['날짜', '일자', '날'],
     targets: [
       { target: 'field', key: 'passage', aliases: ['본문', '말씀', '성경본문', '본문말씀'] },
@@ -389,33 +394,52 @@ const TODAY = kstToday();
 
 // "11/30(일)", "11/30", "2026-11-30", "11월 30일" 등을 YYYY-MM-DD로.
 // 연도가 없으면 오늘과 가장 가까운 해를 고르되, 요일 표기가 있으면 요일까지 맞는 해를 씁니다.
-function parseDateCell(text, ref = TODAY) {
+// "11/30(일)", "11/30", "2026-11-30", "11월 30일" 등을 날짜 후보들로 돌려줍니다.
+// 연도가 없으면 지난해·올해·내년이 모두 후보가 되고, 표 단위로 연도를 정할 때 쓰입니다.
+function dateCandidates(text, ref = TODAY) {
   const raw = String(text || '').trim();
-  if (!raw) return null;
+  if (!raw) return [];
   const match = raw.match(/(?:(\d{4})\s*[.\-/년]\s*)?(\d{1,2})\s*[.\-/월]\s*(\d{1,2})/);
-  if (!match) return null;
+  if (!match) return [];
 
   const month = Number(match[2]);
   const day = Number(match[3]);
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return [];
 
   const explicitYear = match[1] ? Number(match[1]) : 0;
   const dowMatch = raw.match(/\(\s*([일월화수목금토])\s*\)/);
   const wantDow = dowMatch ? DOW.indexOf(dowMatch[1]) : -1;
 
   const years = explicitYear ? [explicitYear] : [ref.getUTCFullYear() - 1, ref.getUTCFullYear(), ref.getUTCFullYear() + 1];
-  let best = null;
+  const out = [];
   for (const year of years) {
     const date = new Date(Date.UTC(year, month - 1, day));
     if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) continue;
     const diffDays = Math.round((date.getTime() - ref.getTime()) / 86400000);
-    // 요일 표기가 있으면 우선하되, 너무 먼 해를 고르지 않도록 어긋남은 '60일' 정도의 벌점으로만 둡니다.
-    const dowOk = wantDow < 0 || date.getUTCDay() === wantDow;
-    const score = Math.abs(diffDays) + (dowOk ? 0 : 60);
-    if (!best || score < best.score) best = { score, date, diffDays };
+    out.push({
+      date: date.toISOString().slice(0, 10),
+      year,
+      dow: date.getUTCDay(),
+      dowOk: wantDow < 0 || date.getUTCDay() === wantDow,
+      diffDays
+    });
   }
-  if (!best) return null;
-  return { date: best.date.toISOString().slice(0, 10), diffDays: best.diffDays };
+  return out;
+}
+
+// "11/30(일)", "11/30", "2026-11-30", "11월 30일" 등을 YYYY-MM-DD로.
+// 연도가 없으면 오늘과 가장 가까운 해를 고르되, 요일 표기가 있으면 요일까지 맞는 해를 씁니다.
+function parseDateCell(text, ref = TODAY, forcedYear = 0) {
+  const candidates = dateCandidates(text, ref).filter(candidate => !forcedYear || candidate.year === forcedYear);
+  if (!candidates.length) return null;
+
+  let best = null;
+  for (const candidate of candidates) {
+    // 요일 표기와 어긋나는 해는 '60일' 정도의 벌점만 주고, 보통은 오늘과 가까운 해를 고릅니다.
+    const score = Math.abs(candidate.diffDays) + (candidate.dowOk ? 0 : 60);
+    if (!best || score < best.score) best = { score, date: candidate.date, diffDays: candidate.diffDays };
+  }
+  return best ? { date: best.date, diffDays: best.diffDays } : null;
 }
 
 function cleanName(value) {
@@ -441,9 +465,9 @@ function positiveInt(value) {
 // 표 → 앱 데이터
 // ---------------------------------------------------------------------------
 
-function buildItem(section, mapping, row) {
+function buildItem(section, mapping, row, forcedYear = 0) {
   const dateText = row[mapping.date];
-  const parsed = parseDateCell(dateText);
+  const parsed = parseDateCell(dateText, TODAY, forcedYear);
   if (!parsed) return null;
   if (parsed.diffDays < -PAST_DAYS || parsed.diffDays > FUTURE_DAYS) return null;
 
@@ -482,6 +506,32 @@ function buildItem(section, mapping, row) {
   return filled ? item : null;
 }
 
+// 표 하나의 연도를 정합니다.
+// "3/22" 처럼 연도가 없는 칸은 지난해·올해·내년 모두 가능한데, 그 표의 행들이
+// 그 예배의 요일(주일=일, 수요=수, 금요=금)과 맞는 해를 고릅니다.
+// 이렇게 하면 예전 기록 표(2026년 봄)가 내년 날짜로 둔갑해 목록에 끼는 일이 없습니다.
+function chooseTableYear(rows, mapping, headerRow, expectedDow) {
+  const scores = new Map();
+  for (let r = Math.max(headerRow + 1, 0); r < rows.length; r++) {
+    for (const candidate of dateCandidates(rows[r][mapping.date])) {
+      let score = scores.get(candidate.year) || 0;
+      if (expectedDow >= 0 && candidate.dow === expectedDow) score += 3;
+      else if (candidate.dowOk) score += 2;
+      if (candidate.diffDays >= -PAST_DAYS && candidate.diffDays <= FUTURE_DAYS) score += 1;
+      scores.set(candidate.year, score);
+    }
+  }
+  let bestYear = 0;
+  let bestScore = -1;
+  for (const [year, score] of scores) {
+    if (score > bestScore) {
+      bestYear = year;
+      bestScore = score;
+    }
+  }
+  return bestYear;
+}
+
 function itemsFromTables(section, tables) {
   const spec = COLUMN_SPECS[section];
   const items = new Map();
@@ -503,10 +553,11 @@ function itemsFromTables(section, tables) {
     headerMatches.forEach(({ rows, mapping, headerRow }, index) => {
       const staffKeys = Object.keys(mapping.staff);
       const fieldKeys = Object.keys(mapping.fields);
-      console.log(`  · ${section} 표 ${index + 1}: 머리글 ${headerRow + 1}행 · 날짜 ${mapping.date}열 · 담당 [${staffKeys.join(', ')}] · 항목 [${fieldKeys.join(', ')}]`);
+      const forcedYear = chooseTableYear(rows, mapping, headerRow, spec.expectedDow ?? -1);
+      console.log(`  · ${section} 표 ${index + 1}: 머리글 ${headerRow + 1}행 · 날짜 ${mapping.date}열 · 연도 ${forcedYear || '자동'} · 담당 [${staffKeys.join(', ')}] · 항목 [${fieldKeys.join(', ')}]`);
       console.log(`    머리글 값: ${JSON.stringify((rows[headerRow] || []).slice(0, 14))}`);
       for (let r = headerRow + 1; r < rows.length; r++) {
-        const item = buildItem(section, mapping, rows[r]);
+        const item = buildItem(section, mapping, rows[r], forcedYear);
         if (item) items.set(item.date, Object.assign(items.get(item.date) || {}, item));
       }
     });
@@ -522,8 +573,9 @@ function itemsFromTables(section, tables) {
     if (looksExcluded(rows, excludeWords)) continue;
     console.log(`  · ${section} 표: 머리글이 없어 기존 열 순서로 읽습니다.`);
     const mapping = fallbackMapping(spec);
+    const forcedYear = chooseTableYear(rows, mapping, -1, spec.expectedDow ?? -1);
     for (const row of rows) {
-      const item = buildItem(section, mapping, row);
+      const item = buildItem(section, mapping, row, forcedYear);
       if (item) items.set(item.date, Object.assign(items.get(item.date) || {}, item));
     }
     if (items.size) break;
@@ -724,7 +776,13 @@ function buildFile({ sunday, wednesday, friday, qt, qtMonths }) {
   mergeByDate(churchData.qt && churchData.qt.items, ${serialize(qt)});
 
   if (churchData.qt && churchData.qt.items && churchData.qt.items.length) {
-${monthsBlock}    var months = churchData.qt.items.map(function (item) { return Number(item.date.slice(5, 7)); });
+${monthsBlock}    // 배지 문구는 앞으로 남은 일정 기준으로 계산합니다. (지난 본문이 범위를 넓히지 않도록)
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var now = new Date();
+    var todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    var upcoming = churchData.qt.items.filter(function (item) { return item.date >= todayStr; });
+    var basis = upcoming.length ? upcoming : churchData.qt.items;
+    var months = basis.map(function (item) { return Number(item.date.slice(5, 7)); });
     var first = Math.min.apply(null, months);
     var last = Math.max.apply(null, months);
     churchData.qt.subtitle = first === last ? first + '월 큐티 일정' : first + '–' + last + '월 큐티 일정';
