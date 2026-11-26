@@ -37,7 +37,7 @@ if (typeof churchData !== 'undefined') {
 
   churchData.qt.items = churchData.qt.items.filter(item => !item.date.startsWith('2026-05-'));
   if (churchData.qt.months) delete churchData.qt.months[5];
-  churchData.qt.subtitle = '6–9월 큐티 일정';
+  // 큐티 기간 문구는 자동 동기화(leaders-update.js)가 실제 일정으로 계산해 넣습니다.
   churchData.qt.description = '';
   churchData.qt.theme = '';
 }
