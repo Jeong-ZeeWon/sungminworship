@@ -2,9 +2,10 @@
 // 원본: 교회 Notion 「주일예배」 「수요예배 담당자」 「금요성령집회」 「매일의 향기」
 // 생성 스크립트: scripts/update-schedules.mjs
 //
-// 아직 GitHub Actions가 한 번도 이 파일을 만들지 않았습니다.
-// 워크플로(update-weekly-leaders.yml)를 수동 실행(workflow_dispatch)하면 실제 일정으로 채워집니다.
-// 그 전까지는 이 파일이 아무것도 바꾸지 않으므로 앱은 지금과 똑같이 동작합니다.
+// 이 파일은 저장소에서는 자리표시자입니다. GitHub Actions는 이 파일을 커밋하지 않고,
+// scripts/update-weekly-leaders.mjs 가 같은 실행에서 만든 이 파일의 내용을
+// leaders-update.js 뒤에 이어 붙여 함께 배포합니다.
+// (index.html은 data.js → leaders-update.js 순서로 불러오고, 그 뒤에 이 파일도 한 번 더 불러옵니다.)
 
 (function () {
   if (typeof churchData === 'undefined') return;

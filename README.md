@@ -11,12 +11,16 @@
 
 ## 수정 원칙
 
-앞으로 예배 일정이나 담당자만 바꿀 때는 Notion 원본을 고치면 됩니다. `data.js`는 초기 스냅샷이고, 매주 자동 생성되는 두 파일이 그 위에 최신 내용을 덮어씁니다.
+앞으로 예배 일정이나 담당자만 바꿀 때는 Notion 원본을 고치면 됩니다. `data.js`는 초기 스냅샷이고, 매주 자동 생성되는 `leaders-update.js`가 그 위에 최신 내용을 덮어씁니다.
 
-- `leaders-update.js` — 「한 주간 예배 담당자」 (새벽·수요·금요·주일 담당자 표)
-- `schedules-auto.js` — 주일·수요·금요·큐티 일정 (`scripts/update-schedules.mjs`가 생성)
+- `leaders-update.js` — 「한 주간 예배 담당자」 + 주일·수요·금요·큐티 일정
+  - 담당자: `scripts/update-weekly-leaders.mjs`
+  - 일정: `scripts/update-schedules.mjs`가 만든 `schedules-auto.js` 내용을 같은 실행에서 `leaders-update.js` 뒤에 이어 붙입니다.
+- `schedules-auto.js` — 일정 스크립트가 만드는 결과 파일. 저장소에는 비어 있는 자리표시자만 있고, 실제 배포는 위 `leaders-update.js`로 이뤄집니다.
 
-두 파일 모두 GitHub Actions(`.github/workflows/update-weekly-leaders.yml`)가 금요일 밤·토요일 아침(KST)에 다시 만들고 커밋합니다. 손으로 고쳐도 다음 실행에서 덮어써지므로, 내용 수정은 Notion에서 해 주세요.
+GitHub Actions(`.github/workflows/update-weekly-leaders.yml`)가 토요일 아침(KST)에 다시 만들고 `leaders-update.js`를 커밋합니다. 손으로 고쳐도 다음 실행에서 덮어쓰이므로, 내용 수정은 Notion에서 해 주세요.
+
+일정 동기화가 실패해도 담당자 갱신과 그 커밋은 그대로 진행됩니다(실행 로그에 경고만 남습니다).
 
 ### 원본 Notion 페이지
 

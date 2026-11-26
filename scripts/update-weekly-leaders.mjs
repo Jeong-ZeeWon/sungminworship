@@ -1,4 +1,9 @@
-import { writeFile } from 'node:fs/promises';
+import { writeFile, appendFile, readFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
+
+const execFileAsync = promisify(execFile);
 
 const token = process.env.NOTION_TOKEN;
 const pageId = process.env.NOTION_PAGE_ID || '35b5e604d8c680aea0c4d47fc08c83f7';
@@ -211,3 +216,30 @@ const output = `// 노션 원자료 기준: 한 주간 예배 담당자\n// GitH
 
 await writeFile('leaders-update.js', output, 'utf8');
 console.log(`Updated leaders-update.js: ${leaders.week}`);
+
+// ---------------------------------------------------------------------------
+// 일정 동기화(주일·수요·금요·큐티)를 같은 실행에 이어 붙입니다.
+//
+// 워크플로(.github/workflows/update-weekly-leaders.yml)는 이 스크립트가 만든
+// leaders-update.js 하나만 git add 로 커밋합니다. 그래서 update-schedules.mjs 가 만든
+// schedules-auto.js 내용을 leaders-update.js 뒤에 그대로 붙여, 한 번의 실행으로
+// 담당자와 일정이 함께 배포되게 합니다. (index.html 은 data.js 다음에 이 파일을 불러옵니다.)
+//
+// 일정 동기화가 실패해도 담당자 갱신은 이미 커밋되므로, 여기서는 예외를 삼키고 경고만 남깁니다.
+// ---------------------------------------------------------------------------
+try {
+  const schedulesScript = fileURLToPath(new URL('./update-schedules.mjs', import.meta.url));
+  const { stdout } = await execFileAsync(process.execPath, [schedulesScript], {
+    cwd: process.cwd(),
+    maxBuffer: 10 * 1024 * 1024
+  });
+  if (stdout) console.log(stdout.trimEnd());
+
+  const schedules = await readFile('schedules-auto.js', 'utf8');
+  await appendFile('leaders-update.js', `\n${schedules}`, 'utf8');
+  console.log('일정 동기화 결과를 leaders-update.js 에 함께 실었습니다.');
+} catch (error) {
+  const detail = error && error.stdout ? String(error.stdout).trimEnd() : '';
+  if (detail) console.error(detail);
+  console.warn(`! 일정 동기화를 건너뜁니다(담당자 갱신은 정상). ${error && error.message ? error.message : error}`);
+}
