@@ -576,11 +576,95 @@ function monthsFromLines(lines) {
   const months = {};
   for (const line of lines) {
     const match = line.trim().match(/^(\d{1,2})\s*월\s*[:：]\s*(.+)$/);
-    if (!match) continue;
-    const month = Number(match[1]);
-    if (month >= 1 && month <= 12) months[month] = match[2].trim();
+    if (match) {
+      const month = Number(match[1]);
+      if (month >= 1 && month <= 12) months[month] = match[2].trim();
+      continue;
+    }
+    // 「2026년 12월 (고린도후서 6~13장, 미가, 성탄절 QT)」 형태
+    const yearly = line.trim().match(/^(\d{4})\s*년\s*(\d{1,2})\s*월\s*[\(（]\s*(.+?)\s*[\)）]?\s*$/);
+    if (yearly) {
+      const month = Number(yearly[2]);
+      if (month >= 1 && month <= 12) months[month] = yearly[3].trim();
+    }
   }
   return months;
+}
+
+// ---------------------------------------------------------------------------
+// 큐티 달력 표
+//
+// 「생명의삶 본문」의 표는 달력 모양입니다.
+//   요일 | 주 | 월 | 화 | 수 | 목 | 금 | 토
+//   일 본문 | 1 몬 1:1~14 | 2 몬 1:15~25 | ...     ← 칸마다 "날짜 본문"
+//   제목   |            | 복음 안에서는 ...       ← 같은 열의 제목
+// 달 번호는 표 앞의 「2026년 11월 (...)」 줄에서 가져옵니다.
+// ---------------------------------------------------------------------------
+
+const QT_DAY_PREFIXES = ['성탄절 QT', '성탄절', '부활절 QT', '부활절', '송구영신 QT'];
+
+function qtMonthHeadline(line) {
+  const match = String(line || '').trim().match(/^(\d{4})\s*년\s*(\d{1,2})\s*월/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return null;
+  return { year, month };
+}
+
+function isQtCalendarTable(rows) {
+  const head = (rows[0] || []).map(cell => String(cell || '').replace(/\s/g, ''));
+  return head.includes('요일') && head.includes('토');
+}
+
+function parseQtCalendarTable(rows, year, month, label) {
+  const items = [];
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    const rowLabel = String(row[0] || '').replace(/\s/g, '');
+    if (!rowLabel.includes('본문')) continue;
+    const next = rows[r + 1];
+    const titleRow = next && String(next[0] || '').includes('제목') ? next : null;
+
+    for (let c = 1; c < row.length; c++) {
+      const cell = String(row[c] || '').trim();
+      if (!cell) continue;
+      const match = cell.match(/^(\d{1,2})\s*(.*)$/);
+      if (!match) continue;
+      const day = Number(match[1]);
+      let passage = match[2].trim();
+      for (const prefix of QT_DAY_PREFIXES) {
+        if (passage.startsWith(prefix)) passage = passage.slice(prefix.length).trim();
+      }
+      if (day < 1 || day > 31 || !passage) continue;
+      const date = new Date(Date.UTC(year, month - 1, day));
+      if (date.getUTCMonth() !== month - 1) continue;
+      const item = { date: date.toISOString().slice(0, 10), passage };
+      const title = titleRow ? cleanName(titleRow[c]) : '';
+      if (title) item.title = title;
+      items.push(item);
+    }
+  }
+  return items;
+}
+
+function itemsFromCalendarTables(tables, monthHeadlines) {
+  const items = [];
+  let index = 0;
+  for (const rows of tables) {
+    if (!isQtCalendarTable(rows)) continue;
+    const headline = monthHeadlines[index];
+    index++;
+    if (!headline) {
+      console.log('    ! 달력 표에 해당하는 월 줄을 찾지 못했습니다.');
+      continue;
+    }
+    const parsed = parseQtCalendarTable(rows, headline.year, headline.month, `${headline.year}년 ${headline.month}월`);
+    console.log(`    · ${headline.year}년 ${headline.month}월 달력 표: ${parsed.length}건`);
+    items.push(...parsed);
+  }
+  return items;
 }
 
 // ---------------------------------------------------------------------------
@@ -709,22 +793,17 @@ for (const page of qtPages) {
   tables.forEach((rows, index) => console.log(`      [표 ${index + 1}] 행 ${rows.length} · 첫 줄 ${JSON.stringify((rows[0] || []).slice(0, 8))}`));
   lines.slice(0, 5).forEach(text => console.log(`      | ${text.slice(0, 120).replace(/\n/g, ' ⏎ ')}`));
   if (qtTables.length) {
-    console.log('      (큐티 표 내용 — 진단용)');
-    tables.forEach((rows, index) => {
-      console.log(`      [표 ${index + 1}]`);
-      rows.forEach(row => console.log(`        ${row.map(cell => String(cell || '').replace(/\n/g, ' ').slice(0, 32)).join(' | ')}`));
-    });
-  }
-}
+    console.log(`      (큐티 표 ${qtTables.length}개, 달력 형태 여부: ${qtTables.filter(isQtCalendarTable).length}개)`);
+  }}
 
 if (qtPages.length) {
   sources.qt = {
-    source: { label: '큐티 본문(월별)', page: qtPages[0].id },
+    source: { label: '큐티 본문', page: qtPages[0].id },
     tables: qtTables,
     lines: qtLines,
     childPageTitles: qtPageNotes
   };
-  report.push(`- 큐티 본문(월별 ${qtPages.length}개 페이지): 표 ${qtTables.length}개, 텍스트 줄 ${qtLines.length}개`);
+  report.push(`- 큐티 본문(${qtPages.length}개 페이지): 표 ${qtTables.length}개, 텍스트 줄 ${qtLines.length}개`);
 } else {
   sources.qt = await readSource('qt');
   report.push(`- ${SOURCES.qt.label}: 표 ${sources.qt.tables.length}개, 텍스트 줄 ${sources.qt.lines.length}개`);
@@ -772,8 +851,9 @@ const wednesday = itemsFromTables('wed', sources.wed.tables);
 const friday = itemsFromTables('fri', sources.fri.tables);
 const qtFromTables = itemsFromTables('qt', sources.qt.tables);
 const qtFromLines = itemsFromLines(sources.qt.lines);
+const qtFromCalendar = itemsFromCalendarTables(sources.qt.tables, sources.qt.lines.map(qtMonthHeadline).filter(Boolean));
 const qtMerged = new Map();
-for (const item of [...qtFromTables, ...qtFromLines]) {
+for (const item of [...qtFromTables, ...qtFromLines, ...qtFromCalendar]) {
   qtMerged.set(item.date, Object.assign(qtMerged.get(item.date) || {}, item));
 }
 const qt = [...qtMerged.values()].sort((a, b) => a.date.localeCompare(b.date));
