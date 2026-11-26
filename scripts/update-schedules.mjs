@@ -765,9 +765,9 @@ ${monthsBlock}    // 배지 문구는 앞으로 남은 일정 기준으로 계�
     var todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
     var upcoming = churchData.qt.items.filter(function (item) { return item.date >= todayStr; });
     var basis = upcoming.length ? upcoming : churchData.qt.items;
-    var months = basis.map(function (item) { return Number(item.date.slice(5, 7)); });
-    var first = Math.min.apply(null, months);
-    var last = Math.max.apply(null, months);
+    basis.sort(function (a, b) { return a.date.localeCompare(b.date); });
+    var first = Number(basis[0].date.slice(5, 7));
+    var last = Number(basis[basis.length - 1].date.slice(5, 7));
     churchData.qt.subtitle = first === last ? first + '월 큐티 일정' : first + '–' + last + '월 큐티 일정';
   }
 })();

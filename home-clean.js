@@ -11,10 +11,9 @@ function syncHomeHeader(){
   const now = new Date();
   const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const upcoming = items.filter(item => item.date >= today);
-  const basis = upcoming.length ? upcoming : items;
-  const months = basis.map(item => Number(item.date.slice(5, 7)));
-  const first = Math.min(...months);
-  const last = Math.max(...months);
+  const basis = (upcoming.length ? upcoming : items).slice().sort((a, b) => a.date.localeCompare(b.date));
+  const first = Number(basis[0].date.slice(5, 7));
+  const last = Number(basis[basis.length - 1].date.slice(5, 7));
   badge.replaceChildren(first === last ? `${first}월` : `${first}–${last}월`);
 }
 
