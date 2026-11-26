@@ -1,12 +1,13 @@
-// 큐티 본문은 지난 날짜를 숨기지 않고 5~9월 전체를 월별로 보여줍니다.
+// 큐티 본문은 지난 날짜를 숨기지 않고 월별로 보여줍니다.
+// 해가 바뀌는 경우(2027년 1월 등)에도 순서가 맞도록 연-월 단위로 묶습니다.
 
 (function () {
   function groupAllQtItems() {
     const groups = {};
     churchData.qt.items.forEach((item, index) => {
-      const month = Number(item.date.slice(5, 7));
-      if (!groups[month]) groups[month] = [];
-      groups[month].push({ item, index });
+      const key = item.date.slice(0, 7); // YYYY-MM
+      if (!groups[key]) groups[key] = [];
+      groups[key].push({ item, index });
     });
     return groups;
   }
@@ -17,10 +18,8 @@
     return { m: d.getMonth() + 1, day: d.getDate(), dow: KDOW[d.getDay()] };
   }
 
-  // 월 카드의 연도는 데이터에서 가져옵니다. (해가 바뀌어도 표시가 틀리지 않도록)
-  function yearOf(rows) {
-    const first = rows && rows[0] && rows[0].item;
-    return first ? Number(first.date.slice(0, 4)) : new Date().getFullYear();
+  function parseMonthKey(key) {
+    return { year: Number(String(key).slice(0, 4)), month: Number(String(key).slice(5, 7)) };
   }
 
   function renderQtListAll() {
@@ -29,13 +28,13 @@
     setHeader('📖 큐티 본문', s.subtitle || '큐티 일정');
 
     const groups = groupAllQtItems();
-    const months = Object.keys(groups).map(Number).sort((a, b) => a - b);
+    const keys = Object.keys(groups).sort();
 
-    const body = months.map(month => {
+    const body = keys.map(key => {
+      const { year, month } = parseMonthKey(key);
       const summary = s.months?.[month] || '';
-      const count = groups[month].length;
-      const year = yearOf(groups[month]);
-      return `<div class="svc-item color-qt" data-qt-month-all="${month}">
+      const count = groups[key].length;
+      return `<div class="svc-item color-qt" data-qt-month-all="${key}">
         <div class="svc-date"><div class="svc-m">${year}</div><div class="svc-d">${month}</div><div class="svc-w">월</div></div>
         <div class="svc-body">
           <div class="svc-title">${year}년 ${month}월 큐티 본문</div>
@@ -56,16 +55,17 @@
     </div>`;
 
     screens.list.querySelectorAll('[data-qt-month-all]').forEach(el => {
-      el.addEventListener('click', () => renderQtMonthAll(Number(el.dataset.qtMonthAll)));
+      el.addEventListener('click', () => renderQtMonthAll(el.dataset.qtMonthAll));
     });
 
     go('list');
   }
 
-  function renderQtMonthAll(month) {
+  function renderQtMonthAll(key) {
     const s = churchData.qt;
+    const { year, month } = parseMonthKey(key);
     const groups = groupAllQtItems();
-    const rows = (groups[month] || []).map(({ item }) => {
+    const rows = (groups[key] || []).map(({ item }) => {
       const { m, day, dow } = qtDateInfo(item.date);
       const title = item.title || item.passage;
       return `<div class="svc-item color-qt">
@@ -75,7 +75,6 @@
     }).join('');
 
     const summary = s.months?.[month] || '';
-    const year = yearOf(groups[month]);
     setHeader(`📖 ${year}년 ${month}월 큐티`, summary || '월별 큐티 본문');
     screens.detail.innerHTML = `<div class="wrap">
       <div class="list-head">
