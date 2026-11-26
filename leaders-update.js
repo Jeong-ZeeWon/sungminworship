@@ -21,8 +21,8 @@ if (typeof churchData !== 'undefined') {
     "preacher": [
       "정지원",
       "정지원",
-      "찬양/정지원",
-      "찬양/최명환",
+      "",
+      "",
       "최명환",
       "최명환"
     ],
@@ -48,7 +48,7 @@ if (typeof churchData !== 'undefined') {
     "preacher": "정지원",
     "worship": "노태규",
     "sound": "윤수신",
-    "pd": "박정인1"
+    "pd": "박정인"
   },
   "friday": {
     "date": "11/27(금)",
